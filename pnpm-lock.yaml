@@ -35,6 +35,9 @@ importers:
       '@open-design/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@open-design/diagnostics':
+        specifier: workspace:*
+        version: link:../../packages/diagnostics
       '@open-design/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -87,6 +90,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@open-design/diagnostics':
+        specifier: workspace:*
+        version: link:../../packages/diagnostics
       '@open-design/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -275,6 +281,25 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@24.12.2)(jsdom@29.1.1)
+
+  packages/diagnostics:
+    dependencies:
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.10
+        version: 20.19.39
+      esbuild:
+        specifier: 0.27.7
+        version: 0.27.7
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@20.19.39)(jsdom@29.1.0)
 
   packages/platform:
     devDependencies:

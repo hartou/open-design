@@ -131,6 +131,7 @@ export async function startDaemonSidecar(runtime: SidecarRuntimeContext<SidecarS
     },
     port: parsePort(process.env[DAEMON_PORT_ENV]),
     returnServer: true,
+    runtime,
   }) as
     | string
     | StartedDaemonServer;

@@ -1537,4 +1537,11 @@ export const en: Dict = {
   'settings.memoryModelInlineHintByok': 'Optional. Reuses your chat API key on the same provider — picking a different (usually cheaper) model only changes the request body.',
   'settings.memoryModelInlineFlashSaved': 'Saved',
   'settings.memoryModelInlineFlashCleared': 'Cleared',
+  // Diagnostics export
+  'diagnostics.exportTitle': 'Export diagnostics',
+  'diagnostics.exportButton': 'Export diagnostics',
+  'diagnostics.exportHint': 'Bundles recent app logs and machine info into a zip you can share with the team.',
+  'diagnostics.exporting': 'Exporting…',
+  'diagnostics.exportSuccess': 'Saved diagnostics to {path}',
+  'diagnostics.exportFailed': 'Could not export diagnostics: {message}',
 };

@@ -3380,6 +3380,57 @@ code {
   overflow-wrap: anywhere;
 }
 
+.settings-about-diagnostics {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.settings-about-diagnostics-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.settings-about-diagnostics h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.settings-about-diagnostics-text .hint {
+  margin: 0;
+  font-size: 12px;
+}
+.diagnostics-export-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 220px;
+}
+.diagnostics-export-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.diagnostics-export-status {
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.diagnostics-export-status.success { color: var(--text); }
+.diagnostics-export-status.error { color: var(--danger, #d4543b); }
+
 .media-provider-list {
   display: flex;
   flex-direction: column;

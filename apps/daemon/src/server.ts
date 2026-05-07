@@ -147,6 +147,8 @@ import {
   validateTarget as validateRoutineTarget,
 } from './routines.js';
 import { buildMcpInstallPayload } from './mcp-install-info.js';
+import { createDiagnosticsExportHandler } from './diagnostics-export.js';
+import { DIAGNOSTICS_EXPORT_PATH } from '@open-design/diagnostics';
 import {
   buildProjectArchive,
   buildBatchArchive,
@@ -2035,11 +2037,23 @@ export function createSseResponse(
 
 export type DesktopPdfExporter = (input: DesktopExportPdfInput) => Promise<DesktopExportPdfResult>;
 
+// Loosely typed shape — we only access `namespace`, `base`, `mode`, and
+// `source` from the runtime context when building the diagnostics export.
+// Anything richer would force a dependency from server.ts into the sidecar
+// package, which the boundary checks explicitly forbid.
+export interface DaemonRuntimeContext {
+  namespace: string;
+  base: string;
+  mode?: string;
+  source?: string;
+}
+
 export interface StartServerOptions {
   desktopPdfExporter?: DesktopPdfExporter | null;
   host?: string;
   port?: number;
   returnServer?: boolean;
+  runtime?: DaemonRuntimeContext | null;
 }
 
 const DEFAULT_CHAT_RUN_INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
@@ -2068,6 +2082,7 @@ export async function startServer({
   host = process.env.OD_BIND_HOST || '127.0.0.1',
   returnServer = false,
   desktopPdfExporter = null,
+  runtime = null,
 }: StartServerOptions = {}) {
   let resolvedPort = port;
   let daemonShuttingDown = false;
@@ -2263,6 +2278,17 @@ export async function startServer({
     requireLocalDaemonRequest,
     composio: composioConnectorProvider,
   });
+
+  // Gate the diagnostics export behind requireLocalDaemonRequest so it stays
+  // unreachable when daemon binds to a non-loopback address (Tailscale,
+  // 0.0.0.0, etc.). The bundle contains daemon/web/desktop logs, host
+  // metadata, and crash reports — same threat tier as connector / live-
+  // artifact endpoints, which all use the same guard.
+  app.get(
+    DIAGNOSTICS_EXPORT_PATH,
+    requireLocalDaemonRequest,
+    createDiagnosticsExportHandler({ runtime, projectRoot: PROJECT_ROOT }),
+  );
 
   // ---- Projects (DB-backed) -------------------------------------------------
 
