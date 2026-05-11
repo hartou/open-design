@@ -22,6 +22,7 @@ This file is the single source of truth for agents entering this repository. Rea
 - `packages/sidecar-proto` owns the Open Design sidecar business protocol; `packages/sidecar` owns the generic sidecar runtime; `packages/platform` owns generic OS process primitives.
 - `tools/dev` is the local development lifecycle control plane.
 - `tools/pack` is the local packaged build/start/stop/logs control plane and mac beta release artifact preparation surface.
+- `tools/pr` is the maintainer PR-duty control plane: a thin `gh` wrapper that encodes this repo's review-lane derivation, forbidden-surface flags, lane checklists, and validation-command suggestions.
 - `e2e` owns user-level end-to-end smoke tests and Playwright UI automation; read `e2e/AGENTS.md` before editing its tests or commands.
 
 ## Inactive or placeholder directories
@@ -46,8 +47,8 @@ This file is the single source of truth for agents entering this repository. Rea
 
 ## Root command boundary
 
-- Keep root scripts reserved for true repo-level checks and tools control-plane entrypoints: `pnpm guard`, `pnpm typecheck`, `pnpm tools-dev`, and `pnpm tools-pack`.
-- Do not add root aggregate `pnpm build` or `pnpm test` aliases. Build/test commands must stay package-scoped (`pnpm --filter <package> ...`) or tool-scoped (`pnpm tools-pack ...`).
+- Keep root scripts reserved for true repo-level checks and tools control-plane entrypoints: `pnpm guard`, `pnpm typecheck`, `pnpm tools-dev`, `pnpm tools-pack`, and `pnpm tools-pr`.
+- Do not add root aggregate `pnpm build` or `pnpm test` aliases. Build/test commands must stay package-scoped (`pnpm --filter <package> ...`) or tool-scoped (`pnpm tools-pack ...` / `pnpm tools-pr ...`).
 - Do not add root e2e aliases; e2e package commands and ownership rules live in `e2e/AGENTS.md`.
 
 ## Boundary constraints
@@ -123,6 +124,14 @@ pnpm typecheck
 ```
 
 ```bash
+pnpm tools-pr list
+pnpm tools-pr list --bucket=merge-ready,approved-blocked
+pnpm tools-pr list --lane=skill,contract --json
+pnpm tools-pr view 1180
+pnpm tools-pr view 1180 --json
+```
+
+```bash
 pnpm --filter @open-design/web typecheck
 pnpm --filter @open-design/web test
 pnpm --filter @open-design/web build
@@ -131,6 +140,7 @@ pnpm --filter @open-design/daemon build
 pnpm --filter @open-design/desktop build
 pnpm --filter @open-design/tools-dev build
 pnpm --filter @open-design/tools-pack build
+pnpm --filter @open-design/tools-pr build
 ```
 
 ```bash
