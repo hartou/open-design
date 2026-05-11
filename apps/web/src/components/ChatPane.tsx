@@ -3,7 +3,7 @@ import { useT } from '../i18n';
 import type { Dict } from '../i18n/types';
 import { projectRawUrl } from '../providers/registry';
 import type { TodoItem } from '../runtime/todos';
-import type { AppConfig, ChatAttachment, ChatCommentAttachment, ChatMessage, Conversation, PreviewComment, ProjectFile, ProjectMetadata } from '../types';
+import type { AppConfig, ChatAttachment, ChatCommentAttachment, ChatMessage, Conversation, PreviewComment, ProjectFile, ProjectMetadata, SkillSummary } from '../types';
 import { dayKey, dayLabel, exactDateTime, messageTime, relativeTimeLong } from '../utils/chatTime';
 import { commentsToAttachments, simplePositionLabel } from '../comments';
 import { AssistantMessage } from './AssistantMessage';
@@ -208,8 +208,16 @@ interface Props {
   onAttachComment?: (comment: PreviewComment) => void;
   onDetachComment?: (commentId: string) => void;
   onDeleteComment?: (commentId: string) => void;
-  onSend: (prompt: string, attachments: ChatAttachment[], commentAttachments: ChatCommentAttachment[], meta?: ChatSendMeta) => void;
+  onSend: (
+    prompt: string,
+    attachments: ChatAttachment[],
+    commentAttachments: ChatCommentAttachment[],
+    meta?: ChatSendMeta,
+  ) => void;
   onStop: () => void;
+  // Skills available for @-mention assembly. ProjectView filters out the
+  // user's disabled set before passing them in here.
+  skills?: SkillSummary[];
   // Click-to-open chain: passes a basename up to ProjectView, which sets
   // FileWorkspace's openRequest. Tool cards, attachment chips, and
   // produced-file chips all call this.
@@ -282,6 +290,7 @@ export function ChatPane({
   onOpenPetSettings,
   projectMetadata,
   onProjectMetadataChange,
+  skills = [],
   researchAvailable,
   onCollapse,
 }: Props) {
@@ -721,6 +730,7 @@ export function ChatPane({
             ref={composerRef}
             projectId={projectId}
             projectFiles={projectFiles}
+            skills={skills}
             streaming={streaming || hasActiveRunMessage}
             initialDraft={initialDraft}
             onEnsureProject={onEnsureProject}

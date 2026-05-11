@@ -23,6 +23,7 @@ import {
   deletePreviewComment,
   fetchPreviewComments,
   fetchDesignSystem,
+  fetchDesignTemplate,
   fetchLiveArtifacts,
   fetchProjectFiles,
   fetchSkill,
@@ -109,7 +110,17 @@ interface Props {
   routeFileName: string | null;
   config: AppConfig;
   agents: AgentInfo[];
+  // Mentionable functional skills — already filtered by config.disabledSkills
+  // upstream, so this drives only the chat composer's @-picker scope. For
+  // resolving an existing project's `skillId` (which can also point at a
+  // design template after the skills/design-templates split) use
+  // `designTemplates` as a fallback in composedSystemPrompt() and in the
+  // skill-name / skill-mode lookups below.
   skills: SkillSummary[];
+  // All known design templates (unfiltered). Required so projects created
+  // from the Templates surface keep composing the template body in API
+  // mode even when the user later disables the template in Settings.
+  designTemplates: SkillSummary[];
   designSystems: DesignSystemSummary[];
   daemonLive: boolean;
   onModeChange: (mode: AppConfig['mode']) => void;
@@ -234,6 +245,7 @@ export function ProjectView({
   config,
   agents,
   skills,
+  designTemplates,
   designSystems,
   daemonLive,
   onModeChange,
@@ -654,14 +666,21 @@ export function ProjectView({
     let designSystemTitle: string | undefined;
 
     if (project.skillId) {
-      const summary = skills.find((s) => s.id === project.skillId);
+      // project.skillId can resolve to either root after the
+      // skills/design-templates split; check both lists so a template-backed
+      // project keeps composing its template body when running in API mode.
+      const summary =
+        skills.find((s) => s.id === project.skillId) ??
+        designTemplates.find((s) => s.id === project.skillId);
       skillName = summary?.name;
       skillMode = summary?.mode;
       const cached = skillCache.current.get(project.skillId);
       if (cached !== undefined) {
         skillBody = cached;
       } else {
-        const detail = await fetchSkill(project.skillId);
+        const detail =
+          (await fetchSkill(project.skillId)) ??
+          (await fetchDesignTemplate(project.skillId));
         if (detail) {
           skillBody = detail.body;
           skillCache.current.set(project.skillId, detail.body);
@@ -730,6 +749,7 @@ export function ProjectView({
     project.designSystemId,
     project.metadata,
     skills,
+    designTemplates,
     designSystems,
     config.mode,
   ]);
@@ -1075,7 +1095,7 @@ export function ProjectView({
       prompt: string,
       attachments: ChatAttachment[],
       commentAttachments: ChatCommentAttachment[] = commentsToAttachments(attachedComments),
-      meta?: { research?: ResearchOptions },
+      meta?: { research?: ResearchOptions; skillIds?: string[] },
     ) => {
       if (!activeConversationId) return;
       if (streaming) return;
@@ -1156,6 +1176,7 @@ export function ProjectView({
 
       const parser = createArtifactParser();
       let liveHtml = '';
+      let streamedText = '';
 
       const updateAssistant = (updater: (prev: ChatMessage) => ChatMessage) => {
         setMessages((curr) =>
@@ -1265,12 +1286,15 @@ export function ProjectView({
       abortRef.current = controller;
       cancelRef.current = cancelController;
       const handlers = {
-        onDelta: textBuffer.appendContent,
+        onDelta: (delta: string) => {
+          streamedText += delta;
+          textBuffer.appendContent(delta);
+        },
         onAgentEvent: (ev: AgentEvent) => {
           if (ev.kind === 'text') textBuffer.appendTextEvent(ev.text);
           else pushEvent(ev);
         },
-        onDone: () => {
+        onDone: (fullText = '') => {
           textBuffer.flush();
           textBuffer.cancel();
           cancelSendTextBuffer();
@@ -1278,6 +1302,37 @@ export function ProjectView({
             if (ev.type === 'artifact:end') {
               setArtifact((prev) => (prev ? { ...prev, html: ev.fullContent } : null));
             }
+          }
+          const emptyApiResponse =
+            config.mode === 'api' &&
+            !fullText.trim() &&
+            !streamedText.trim() &&
+            !liveHtml.trim();
+          if (emptyApiResponse) {
+            const diagnostic = t('assistant.emptyResponseMessage');
+            updateMessageById(
+              assistantId,
+              (prev) => ({
+                ...prev,
+                endedAt: Date.now(),
+                events: [
+                  ...(prev.events ?? []),
+                  { kind: 'status', label: 'empty_response', detail: config.model },
+                  { kind: 'text', text: diagnostic },
+                ],
+              }),
+              true,
+              { telemetryFinalized: true },
+            );
+            if (commentAttachments.length > 0) {
+              void patchAttachedStatuses(commentAttachments, 'failed');
+            }
+            setStreaming(false);
+            abortRef.current = null;
+            cancelRef.current = null;
+            void refreshProjectFiles();
+            onProjectsRefresh();
+            return;
           }
           updateAssistant((prev) => ({
             ...prev,
@@ -1361,6 +1416,7 @@ export function ProjectView({
           assistantMessageId: assistantId,
           clientRequestId: randomUUID(),
           skillId: project.skillId ?? null,
+          skillIds: Array.isArray(meta?.skillIds) ? meta.skillIds : [],
           designSystemId: project.designSystemId ?? null,
           attachments: attachments.map((a) => a.path),
           commentAttachments,
@@ -1751,14 +1807,19 @@ export function ProjectView({
   );
 
   const projectMeta = useMemo(() => {
-    const skill = skills.find((s) => s.id === project.skillId)?.name;
+    const summary =
+      skills.find((s) => s.id === project.skillId) ??
+      designTemplates.find((s) => s.id === project.skillId);
+    const skill = summary?.name;
     const ds = designSystems.find((d) => d.id === project.designSystemId)?.title;
     return [skill, ds].filter(Boolean).join(' · ') || t('project.metaFreeform');
-  }, [skills, designSystems, project.skillId, project.designSystemId, t]);
+  }, [skills, designTemplates, designSystems, project.skillId, project.designSystemId, t]);
 
   const isDeck = useMemo(
-    () => skills.find((s) => s.id === project.skillId)?.mode === 'deck',
-    [skills, project.skillId],
+    () =>
+      (skills.find((s) => s.id === project.skillId) ??
+        designTemplates.find((s) => s.id === project.skillId))?.mode === 'deck',
+    [skills, designTemplates, project.skillId],
   );
   const chatResizeLabel = t('project.resizeChatPanel');
   const workspacePanelTrack =
@@ -2136,6 +2197,7 @@ export function ProjectView({
               projectId={project.id}
               projectFiles={projectFiles}
               projectFileNames={projectFileNames}
+              skills={skills}
               onEnsureProject={handleEnsureProject}
               previewComments={previewComments}
               attachedComments={attachedComments}

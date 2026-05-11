@@ -881,6 +881,15 @@ const DESIGN_SYSTEMS_DIR = resolveDaemonResourceDir(
   'design-systems',
   path.join(PROJECT_ROOT, 'design-systems'),
 );
+// Renderable templates pulled out of `skills/` by the skills/design-templates
+// split (PR #955) so the EntryView Templates tab gets the large rendering
+// catalogue and Settings → Skills only carries functional skills the agent
+// invokes mid-task. See specs/current/skills-and-design-templates.md.
+const DESIGN_TEMPLATES_DIR = resolveDaemonResourceDir(
+  DAEMON_RESOURCE_ROOT,
+  'design-templates',
+  path.join(PROJECT_ROOT, 'design-templates'),
+);
 const CRAFT_DIR = resolveDaemonResourceDir(
   DAEMON_RESOURCE_ROOT,
   'craft',
@@ -975,8 +984,26 @@ const CRITIQUE_ARTIFACTS_DIR = path.join(RUNTIME_DATA_DIR, 'critique-artifacts')
 const PROJECTS_DIR = path.join(RUNTIME_DATA_DIR, 'projects');
 const USER_SKILLS_DIR = path.join(RUNTIME_DATA_DIR, 'skills');
 const USER_DESIGN_SYSTEMS_DIR = path.join(RUNTIME_DATA_DIR, 'design-systems');
+// User-imported design templates mirror USER_SKILLS_DIR but are scanned
+// against DESIGN_TEMPLATES_DIR rather than SKILLS_DIR so the EntryView
+// Templates surface and the Settings → Skills surface stay decoupled.
+const USER_DESIGN_TEMPLATES_DIR = path.join(RUNTIME_DATA_DIR, 'design-templates');
+// Multi-root tuples used everywhere the daemon resolves a skill / template
+// id without knowing which surface it came from. SKILL_ROOTS drives
+// Settings → Skills; DESIGN_TEMPLATE_ROOTS drives the EntryView Templates
+// gallery; ALL_SKILL_LIKE_ROOTS spans both for chat run system-prompt
+// composition and the orbit template resolver, where stored project ids
+// can resolve to either root after the split.
+const SKILL_ROOTS = [USER_SKILLS_DIR, SKILLS_DIR];
+const DESIGN_TEMPLATE_ROOTS = [USER_DESIGN_TEMPLATES_DIR, DESIGN_TEMPLATES_DIR];
+const ALL_SKILL_LIKE_ROOTS = [
+  USER_SKILLS_DIR,
+  USER_DESIGN_TEMPLATES_DIR,
+  SKILLS_DIR,
+  DESIGN_TEMPLATES_DIR,
+];
 fs.mkdirSync(PROJECTS_DIR, { recursive: true });
-for (const dir of [USER_SKILLS_DIR, USER_DESIGN_SYSTEMS_DIR]) {
+for (const dir of [USER_SKILLS_DIR, USER_DESIGN_SYSTEMS_DIR, USER_DESIGN_TEMPLATES_DIR]) {
   fs.mkdirSync(dir, { recursive: true });
 }
 fs.mkdirSync(CRITIQUE_ARTIFACTS_DIR, { recursive: true });
@@ -2044,24 +2071,26 @@ export async function startServer({
   const app = express();
   app.use(express.json({ limit: '4mb' }));
 
-  // Multi-directory scanning: merge built-in and user-installed skills/DS.
-  // Built-in items win on ID collisions (higher priority per skills-protocol.md).
+  // Multi-directory scanning shared by every skill / template surface. The
+  // helpers delegate to listSkills(roots) which walks roots in priority
+  // order, tags each entry with the SkillSource ('user' for the user
+  // root, 'built-in' for the bundled root) the contracts package
+  // declares, and lets a user-imported entry shadow a built-in one of
+  // the same id without erasing the built-in copy.
   async function listAllSkills() {
-    const builtIn = (await listSkills(SKILLS_DIR)).map((s) => ({
-      ...s,
-      source: 'built-in',
-    }));
-    let installed = [];
-    try {
-      installed = (await listSkills(USER_SKILLS_DIR)).map((s) => ({
-        ...s,
-        source: 'installed',
-      }));
-    } catch {
-      // User directory may not exist yet or be unreadable.
-    }
-    const seen = new Set(builtIn.map((s) => s.id));
-    return [...builtIn, ...installed.filter((s) => !seen.has(s.id))];
+    return listSkills(SKILL_ROOTS);
+  }
+
+  async function listAllDesignTemplates() {
+    return listSkills(DESIGN_TEMPLATE_ROOTS);
+  }
+
+  // Spans both roots so chat run system-prompt composition and the orbit
+  // template resolver can resolve a stored project.skillId regardless of
+  // which surface created the project after the skills/design-templates
+  // split. Keep in sync with SKILL_ROOTS + DESIGN_TEMPLATE_ROOTS above.
+  async function listAllSkillLikeEntries() {
+    return listSkills(ALL_SKILL_LIKE_ROOTS);
   }
 
   async function listAllDesignSystems() {
@@ -2593,6 +2622,8 @@ export async function startServer({
     RUNTIME_DATA_DIR_CANONICAL,
     DESIGN_SYSTEMS_DIR,
     USER_DESIGN_SYSTEMS_DIR,
+    DESIGN_TEMPLATES_DIR,
+    USER_DESIGN_TEMPLATES_DIR,
     SKILLS_DIR,
     USER_SKILLS_DIR,
     PROMPT_TEMPLATES_DIR,
@@ -2802,7 +2833,13 @@ export async function startServer({
   registerStaticResourceRoutes(app, {
     http: httpDeps,
     paths: pathDeps,
-    resources: { listAllSkills, listAllDesignSystems, mimeFor },
+    resources: {
+      listAllSkills,
+      listAllDesignTemplates,
+      listAllSkillLikeEntries,
+      listAllDesignSystems,
+      mimeFor,
+    },
   });
   registerProjectArtifactRoutes(app, {
     http: httpDeps,
@@ -2899,8 +2936,11 @@ export async function startServer({
     let skillCraftRequires = [];
     let activeSkillDir = null;
     if (effectiveSkillId) {
+      // Span both functional skills and design templates so a project
+      // saved against either surface keeps its system prompt after the
+      // skills/design-templates split. See specs/current/skills-and-design-templates.md.
       const skill = findSkillById(
-        await listAllSkills(),
+        await listAllSkillLikeEntries(),
         effectiveSkillId,
       );
       if (skill) {
@@ -4215,7 +4255,11 @@ export async function startServer({
   });
 
   orbitService.setTemplateResolver(async (skillId) => {
-    const skills = await listAllSkills();
+    // Orbit templates (live-artifact, etc.) live under design-templates after
+    // the split, but earlier projects may still point at functional-skill
+    // ids for the same purpose — search both roots so a stored project id
+    // keeps resolving through one or the other.
+    const skills = await listAllSkillLikeEntries();
     const skill = findSkillById(skills, skillId);
     if (!skill || skill.scenario !== 'orbit') return null;
     return {
@@ -4361,7 +4405,13 @@ export async function startServer({
     nativeDialogs: nativeDialogDeps,
     research: researchDeps,
     mcp: { pendingAuth: mcpPendingAuth, daemonUrlRef },
-    resources: { listAllSkills, listAllDesignSystems, mimeFor },
+    resources: {
+      listAllSkills,
+      listAllDesignTemplates,
+      listAllSkillLikeEntries,
+      listAllDesignSystems,
+      mimeFor,
+    },
     routines: { routineService },
     validation: validationDeps,
     finalize: finalizeDeps,

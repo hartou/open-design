@@ -57,7 +57,8 @@ import { MEDIA_PROVIDERS } from '../media/models';
 import type { MediaProvider } from '../media/models';
 import { PetSettings } from './pet/PetSettings';
 import { McpClientSection } from './McpClientSection';
-import { LibrarySection } from './LibrarySection';
+import { SkillsSection } from './SkillsSection';
+import { DesignSystemsSection } from './DesignSystemsSection';
 import { PrivacySection } from './PrivacySection';
 import { RoutinesSection } from './RoutinesSection';
 import { ConnectorsBrowser } from './ConnectorsBrowser';
@@ -88,8 +89,9 @@ export type SettingsSection =
   | 'appearance'
   | 'notifications'
   | 'pet'
+  | 'skills'
+  | 'designSystems'
   | 'memory'
-  | 'library'
   | 'privacy'
   | 'about';
 
@@ -1304,8 +1306,12 @@ export function SettingsDialog({
     notifications: { title: t('settings.notifications'), subtitle: t('settings.notificationsHint') },
     privacy: { title: t('settings.privacy'), subtitle: t('settings.privacyHint') },
     pet: { title: t('pet.title'), subtitle: t('pet.subtitle') },
+    skills: { title: t('settings.skills'), subtitle: t('settings.skillsHint') },
+    designSystems: {
+      title: t('settings.designSystems'),
+      subtitle: t('settings.designSystemsHint'),
+    },
     memory: { title: t('settings.memory'), subtitle: t('settings.memoryHint') },
-    library: { title: t('settings.library'), subtitle: t('settings.libraryHint') },
     about: { title: t('settings.about'), subtitle: t('settings.aboutHint') },
   };
   const activeHeader = sectionHeader[activeSection];
@@ -1373,26 +1379,6 @@ export function SettingsDialog({
               <span className="kicker">{t('settings.welcomeKicker')}</span>
               <h2>{t('settings.welcomeTitle')}</h2>
               <p className="subtitle">{t('settings.welcomeSubtitle')}</p>
-              {/* First-run users see a mini pet teaser inside the welcome
-                  modal so adoption is part of the warm intro rather than
-                  hidden behind another nav click. The chip nudges them
-                  toward Pets without forcing them to leave the rest of
-                  the welcome flow. */}
-              <button
-                type="button"
-                className="welcome-pet-teaser"
-                onClick={() => setActiveSection('pet')}
-              >
-                <span className="welcome-pet-glyph" aria-hidden>🐾</span>
-                <span className="welcome-pet-copy">
-                  <strong>{t('pet.welcomeTeaserTitle')}</strong>
-                  <span>{t('pet.welcomeTeaserBody')}</span>
-                </span>
-                <span className="welcome-pet-cta">
-                  {t('pet.welcomeTeaserCta')}
-                  <Icon name="chevron-right" size={12} />
-                </span>
-              </button>
             </>
           ) : (
             <>
@@ -1429,17 +1415,6 @@ export function SettingsDialog({
             </button>
             <button
               type="button"
-              className={`settings-nav-item${activeSection === 'library' ? ' active' : ''}`}
-              onClick={() => setActiveSection('library')}
-            >
-              <Icon name="grid" size={18} />
-              <span>
-                <strong>{t('settings.library')}</strong>
-                <small>{t('settings.libraryHint')}</small>
-              </span>
-            </button>
-            <button
-              type="button"
               className={`settings-nav-item${activeSection === 'media' ? ' active' : ''}`}
               onClick={() => setActiveSection('media')}
             >
@@ -1447,6 +1422,28 @@ export function SettingsDialog({
               <span>
                 <strong>{t('settings.mediaProviders')}</strong>
                 <small>Image / video / audio</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`settings-nav-item${activeSection === 'skills' ? ' active' : ''}`}
+              onClick={() => setActiveSection('skills')}
+            >
+              <Icon name="grid" size={18} />
+              <span>
+                <strong>{t('settings.skills')}</strong>
+                <small>{t('settings.skillsHint')}</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`settings-nav-item${activeSection === 'mcpClient' ? ' active' : ''}`}
+              onClick={() => setActiveSection('mcpClient')}
+            >
+              <Icon name="sparkles" size={18} />
+              <span>
+                <strong>{t('settings.externalMcpTitle')}</strong>
+                <small>{t('settings.externalMcpHint')}</small>
               </span>
             </button>
             <button
@@ -1495,17 +1492,6 @@ export function SettingsDialog({
             </button>
             <button
               type="button"
-              className={`settings-nav-item${activeSection === 'mcpClient' ? ' active' : ''}`}
-              onClick={() => setActiveSection('mcpClient')}
-            >
-              <Icon name="sparkles" size={18} />
-              <span>
-                <strong>{t('settings.externalMcpTitle')}</strong>
-                <small>{t('settings.externalMcpHint')}</small>
-              </span>
-            </button>
-            <button
-              type="button"
               className={`settings-nav-item${activeSection === 'language' ? ' active' : ''}`}
               onClick={() => setActiveSection('language')}
             >
@@ -1546,6 +1532,17 @@ export function SettingsDialog({
               <span>
                 <strong>{t('pet.navTitle')}</strong>
                 <small>{t('pet.navHint')}</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`settings-nav-item${activeSection === 'designSystems' ? ' active' : ''}`}
+              onClick={() => setActiveSection('designSystems')}
+            >
+              <Icon name="draw" size={18} />
+              <span>
+                <strong>{t('settings.designSystems')}</strong>
+                <small>{t('settings.designSystemsHint')}</small>
               </span>
             </button>
             <button
@@ -2425,11 +2422,15 @@ export function SettingsDialog({
             <PetSettings cfg={cfg} setCfg={setCfg} />
           ) : null}
 
-          {activeSection === 'memory' ? <MemorySection /> : null}
-
-          {activeSection === 'library' ? (
-            <LibrarySection cfg={cfg} setCfg={setCfg} />
+          {activeSection === 'skills' ? (
+            <SkillsSection cfg={cfg} setCfg={setCfg} />
           ) : null}
+
+          {activeSection === 'designSystems' ? (
+            <DesignSystemsSection cfg={cfg} setCfg={setCfg} />
+          ) : null}
+
+          {activeSection === 'memory' ? <MemorySection /> : null}
 
           {activeSection === 'privacy' ? (
             <PrivacySection cfg={cfg} setCfg={setCfg} />

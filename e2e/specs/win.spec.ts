@@ -125,6 +125,11 @@ type SmokeTiming = {
   step: string;
 };
 
+type DirectInstallerResult = {
+  code: number | null;
+  nsisLogTail: string[];
+};
+
 const shouldRunPackagedWinSmoke = process.platform === 'win32' && process.env.OD_PACKAGED_E2E_WIN === '1';
 const winDescribe = shouldRunPackagedWinSmoke ? describe : describe.skip;
 
@@ -172,7 +177,7 @@ winDescribe('packaged windows runtime smoke', () => {
         );
       }
 
-      const start = await measureSmokeStep(timings, 'start', async () => runToolsPackJson<WinStartResult>('start'));
+      let start = await measureSmokeStep(timings, 'start', async () => runToolsPackJson<WinStartResult>('start'));
       started = true;
 
       expect(start.namespace).toBe(namespace);
@@ -190,6 +195,27 @@ winDescribe('packaged windows runtime smoke', () => {
       expect(value.status).toBe(200);
       expect(value.health.ok).toBe(true);
       expect(value.health.version).toEqual(expect.any(String));
+
+      const reinstall = await measureSmokeStep(timings, 'direct reinstall while running', async () =>
+        runDirectInstaller(install.installerPath, install.installDir),
+      );
+      started = false;
+      expect(reinstall.code).toBe(0);
+      expect(reinstall.nsisLogTail.join('\n')).toContain('running instances detected before silent install');
+      expect(reinstall.nsisLogTail.join('\n')).toContain('running instances close exit=0');
+
+      start = await measureSmokeStep(timings, 'restart after direct reinstall', async () =>
+        runToolsPackJson<WinStartResult>('start'),
+      );
+      started = true;
+      expect(start.namespace).toBe(namespace);
+      expect(start.source).toBe('installed');
+      expectPathInside(start.executablePath, install.installDir);
+
+      const postReinstallInspect = await measureSmokeStep(timings, 'wait healthy inspect after reinstall', async () =>
+        waitForHealthyDesktop(),
+      );
+      expect(postReinstallInspect.status?.state).toBe('running');
 
       await mkdir(dirname(screenshotPath), { recursive: true });
       const screenshot = await measureSmokeStep(timings, 'inspect screenshot', async () =>
@@ -235,6 +261,7 @@ winDescribe('packaged windows runtime smoke', () => {
         installTiming,
         logs: summarizeLogs(logs),
         namespace,
+        reinstall,
         screenshot: report.screenshotRelpath,
         start: {
           executablePath: start.executablePath,
@@ -329,6 +356,29 @@ async function runToolsPackJson<T>(action: string, extraArgs: string[] = []): Pr
   } catch (error) {
     throw new Error(`tools-pack win ${action} did not print JSON: ${String(error)}\n${result.stdout}`);
   }
+}
+
+async function runDirectInstaller(installerPath: string, installDir: string): Promise<DirectInstallerResult> {
+  const previousLogLines = await readNsisLogLines();
+  const error = await execFileAsync(installerPath, ['/S', `/D=${installDir}`], {
+    cwd: dirname(installerPath),
+    env: process.env,
+    maxBuffer: 20 * 1024 * 1024,
+    windowsVerbatimArguments: true,
+  }).then(
+    () => null,
+    (caught: unknown) => caught,
+  );
+  const code = isExecError(error) ? Number(error.code) : error == null ? 0 : null;
+  return {
+    code,
+    nsisLogTail: (await readNsisLogLines()).slice(previousLogLines.length),
+  };
+}
+
+async function readNsisLogLines(): Promise<string[]> {
+  const raw = await readFile(join(outputNamespaceRoot, 'logs', 'nsis.log'), 'utf8').catch(() => '');
+  return raw.split(/\r?\n/).filter((line) => line.length > 0);
 }
 
 async function waitForHealthyDesktop(): Promise<WinInspectResult> {
@@ -447,7 +497,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value != null && !Array.isArray(value);
 }
 
-function isExecError(value: unknown): value is { message: string; stderr: string; stdout: string } {
+function isExecError(value: unknown): value is { code?: unknown; message: string; stderr: string; stdout: string } {
   return (
     isRecord(value) &&
     typeof value.message === 'string' &&

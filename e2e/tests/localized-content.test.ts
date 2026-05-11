@@ -152,9 +152,9 @@ function unquoteYamlScalar(value: string): string {
   return trimmed;
 }
 
-async function readSkillResources(): Promise<SkillResource[]> {
-  const skillsRoot = path.join(repoRoot, 'skills');
-  await assertDirectory(skillsRoot, 'skills');
+async function readSkillRootResources(rootName: 'skills' | 'design-templates'): Promise<SkillResource[]> {
+  const skillsRoot = path.join(repoRoot, rootName);
+  await assertDirectory(skillsRoot, rootName);
 
   const entries = await readdir(skillsRoot, { withFileTypes: true });
   const resources = await Promise.all(
@@ -166,22 +166,33 @@ async function readSkillResources(): Promise<SkillResource[]> {
         try {
           raw = await readFile(filePath, 'utf8');
         } catch (error) {
-          throw new Error(`Skill resource is missing required file: ${filePath}`, { cause: error });
+          throw new Error(`${rootName} resource is missing required file: ${filePath}`, { cause: error });
         }
         const frontmatter = parseFrontmatter(filePath, raw);
         const id = extractYamlScalar(frontmatter, 'name');
-        invariant(id, `Skill ${entry.name} is missing required English fallback field: frontmatter name`);
-        assertResourceId(id, `Skill ${entry.name}`);
+        invariant(
+          id,
+          `${rootName} ${entry.name} is missing required English fallback field: frontmatter name`,
+        );
+        assertResourceId(id, `${rootName} ${entry.name}`);
         const description = extractYamlScalar(frontmatter, 'description');
         invariant(
           description,
-          `Skill ${id} is missing required English fallback field: description`,
+          `${rootName} ${id} is missing required English fallback field: description`,
         );
         return { id, description };
       }),
   );
 
   return resources.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+async function readSkillResources(): Promise<SkillResource[]> {
+  const [skills, designTemplates] = await Promise.all([
+    readSkillRootResources('skills'),
+    readSkillRootResources('design-templates'),
+  ]);
+  return [...skills, ...designTemplates].sort((a, b) => a.id.localeCompare(b.id));
 }
 
 async function readDesignSystemResources(): Promise<DesignSystemResource[]> {
