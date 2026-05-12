@@ -346,7 +346,7 @@ describe('MemorySection', () => {
     renderMemorySection();
 
     const card = await screen.findByText('UI preferences');
-    const row = card.closest('.library-card')!;
+    const row = card.closest('.library-card') as HTMLElement;
 
     fireEvent.click(within(row).getByTitle('Preview'));
     expect(await screen.findByText('Prefer compact cards')).toBeTruthy();
@@ -416,7 +416,7 @@ describe('MemorySection', () => {
 
     renderMemorySection();
 
-    const card = (await screen.findByText('UI preferences')).closest('.library-card')!;
+    const card = (await screen.findByText('UI preferences')).closest('.library-card') as HTMLElement;
     fireEvent.click(within(card).getByTitle('Delete'));
 
     await waitFor(() => {
@@ -479,7 +479,7 @@ describe('MemorySection', () => {
     expect(await screen.findByText('Remember I prefer dark mode')).toBeTruthy();
     expect(screen.getByText('No durable memory in this turn')).toBeTruthy();
 
-    const row = screen.getByText('Remember I prefer dark mode').closest('li')!;
+    const row = screen.getByText('Remember I prefer dark mode').closest('li') as HTMLElement;
     fireEvent.click(within(row).getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => {

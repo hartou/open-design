@@ -2,6 +2,7 @@
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Routine } from '@open-design/contracts';
 
 import { RoutinesSection } from '../../src/components/RoutinesSection';
 import * as router from '../../src/router';
@@ -18,7 +19,7 @@ describe('RoutinesSection', () => {
   });
 
   it('creates a weekly routine that reuses an existing project', async () => {
-    let routines: any[] = [];
+    let routines: Routine[] = [];
     const projects = [{ id: 'proj-1', name: 'Routine Test Project' }];
     const createBodies: unknown[] = [];
 
@@ -45,6 +46,8 @@ describe('RoutinesSection', () => {
           prompt: body.prompt,
           schedule: body.schedule,
           target: body.target,
+          skillId: null,
+          agentId: null,
           enabled: true,
           nextRunAt: Date.now() + 3600_000,
           lastRun: null,
@@ -99,12 +102,14 @@ describe('RoutinesSection', () => {
   });
 
   it('pauses and resumes an existing routine through PATCH updates', async () => {
-    let routines = [{
+    let routines: Routine[] = [{
       id: 'routine-1',
       name: 'Morning briefing',
       prompt: 'Morning summary',
       schedule: { kind: 'daily', time: '09:00', timezone: 'UTC' },
       target: { mode: 'create_each_run' },
+      skillId: null,
+      agentId: null,
       enabled: true,
       nextRunAt: Date.now() + 3600_000,
       lastRun: null,
@@ -130,8 +135,9 @@ describe('RoutinesSection', () => {
       if (url === '/api/routines/routine-1' && init?.method === 'PATCH') {
         const body = JSON.parse(String(init.body));
         patchBodies.push(body);
+        const current = routines[0]!;
         routines = [{
-          ...routines[0],
+          ...current,
           enabled: body.enabled,
           updatedAt: Date.now(),
         }];
@@ -162,12 +168,14 @@ describe('RoutinesSection', () => {
   });
 
   it('runs a routine now and loads its history', async () => {
-    let routines = [{
+    let routines: Routine[] = [{
       id: 'routine-1',
       name: 'Morning briefing',
       prompt: 'Morning summary',
       schedule: { kind: 'daily', time: '09:00', timezone: 'UTC' },
       target: { mode: 'create_each_run' },
+      skillId: null,
+      agentId: null,
       enabled: true,
       nextRunAt: Date.now() + 3600_000,
       lastRun: null,
@@ -192,8 +200,9 @@ describe('RoutinesSection', () => {
       }
       if (url === '/api/routines/routine-1/run' && init?.method === 'POST') {
         runBodies.push(url);
+        const current = routines[0]!;
         routines = [{
-          ...routines[0],
+          ...current,
           lastRun: {
             runId: 'run-1',
             status: 'queued',
@@ -206,7 +215,7 @@ describe('RoutinesSection', () => {
         }];
         return new Response(JSON.stringify({
           routine: routines[0],
-          run: routines[0].lastRun,
+          run: routines[0]!.lastRun,
           projectId: 'proj-run',
           conversationId: 'conv-run',
           agentRunId: 'agent-run-1',
@@ -297,12 +306,14 @@ describe('RoutinesSection', () => {
   });
 
   it('deletes a routine after confirmation', async () => {
-    let routines = [{
+    let routines: Routine[] = [{
       id: 'routine-1',
       name: 'Morning briefing',
       prompt: 'Morning summary',
       schedule: { kind: 'daily', time: '09:00', timezone: 'UTC' },
       target: { mode: 'create_each_run' },
+      skillId: null,
+      agentId: null,
       enabled: true,
       nextRunAt: Date.now() + 3600_000,
       lastRun: null,
