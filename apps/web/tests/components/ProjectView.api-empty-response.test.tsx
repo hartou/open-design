@@ -259,6 +259,14 @@ describe('ProjectView API empty response handling', () => {
     expect(mockedPlaySound).toHaveBeenCalledWith('failure-sound');
   });
 
+  it('keeps project action entry points visible above the workspace', async () => {
+    renderProjectView();
+
+    expect(screen.getByRole('toolbar', { name: 'Project actions' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Finalize design package' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue in CLI' })).toBeTruthy();
+  });
+
   it('marks attached saved comments as failed when an API completion has no output', async () => {
     chatPaneMockState.commentAttachments = [
       {
