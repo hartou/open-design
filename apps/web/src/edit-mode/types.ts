@@ -62,6 +62,7 @@ export interface ManualEditTarget {
   fields: ManualEditFields;
   attributes: Record<string, string>;
   styles: ManualEditStyles;
+  isLayoutContainer: boolean;
   outerHtml: string;
 }
 
@@ -94,7 +95,18 @@ export interface ManualEditSelectMessage {
   target: ManualEditTarget;
 }
 
-export type ManualEditBridgeMessage = ManualEditTargetMessage | ManualEditSelectMessage;
+export interface ManualEditPreviewAppliedMessage {
+  type: 'od-edit-preview-style-applied';
+  id: string;
+  version: number;
+  ok: boolean;
+  error?: string;
+}
+
+export type ManualEditBridgeMessage =
+  | ManualEditTargetMessage
+  | ManualEditSelectMessage
+  | ManualEditPreviewAppliedMessage;
 
 export const MANUAL_EDIT_STYLE_PROPS: readonly (keyof ManualEditStyles)[] = [
   'fontFamily', 'fontSize', 'fontWeight', 'color', 'textAlign', 'lineHeight', 'letterSpacing',

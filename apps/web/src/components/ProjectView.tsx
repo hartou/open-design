@@ -95,6 +95,7 @@ import { ChatPane } from './ChatPane';
 import { decideAutoOpenAfterWrite } from './auto-open-file';
 import { FileWorkspace } from './FileWorkspace';
 import { CenteredLoader } from './Loading';
+import { ProjectActionsToolbar } from './ProjectActionsToolbar';
 import { Toast } from './Toast';
 import { useDesignMdState } from '../hooks/useDesignMdState';
 import { useFinalizeProject } from '../hooks/useFinalizeProject';
@@ -2194,6 +2195,14 @@ export function ProjectView({
             <span className="meta" data-testid="project-meta">{projectMeta}</span>
         </div>
       </AppChromeHeader>
+      <ProjectActionsToolbar
+        designMdState={designMdState}
+        finalizeStatus={finalize.status}
+        onFinalize={handleFinalize}
+        onCancelFinalize={handleCancelFinalize}
+        onContinueInCli={handleContinueInCli}
+        hidden={workspaceFocused}
+      />
       <div
         ref={splitRef}
         className={[

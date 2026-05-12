@@ -25,8 +25,9 @@ export function ManualEditPanel({
   draft,
   error,
   onDraftChange,
-  onPreviewStyle,
-  onApplyPatch,
+  onStyleChange,
+  onError,
+  onClearSelection,
 }: {
   targets: ManualEditTarget[];
   selectedTarget: ManualEditTarget | null;
@@ -38,49 +39,29 @@ export function ManualEditPanel({
   busy?: boolean;
   onSelectTarget: (target: ManualEditTarget) => void;
   onDraftChange: (draft: ManualEditDraft) => void;
-  onPreviewStyle?: (id: string, styles: Partial<ManualEditStyles>) => void;
+  onStyleChange?: (id: string, styles: Partial<ManualEditStyles>, label: string) => void;
   onApplyPatch: (patch: ManualEditPatch, label: string) => void;
   onError: (message: string) => void;
+  onClearSelection: () => void;
   onCancelDraft: () => void;
   onUndo: () => void;
   onRedo: () => void;
 }) {
-  // Live preview: every style change goes to the iframe via postMessage so the
-  // canvas updates instantly without an iframe reload. The 1.5s debounced
-  // source-rewrite still happens via onApplyPatch for persistence.
-  const lastPreviewedRef = useRef<string>('');
-  const lastAppliedRef = useRef<string>('');
-  const lastTargetIdRef = useRef<string | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!selectedTarget) {
-      lastTargetIdRef.current = null;
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      return;
-    }
-    const key = JSON.stringify(draft.styles);
-    if (lastTargetIdRef.current !== selectedTarget.id) {
-      lastTargetIdRef.current = selectedTarget.id;
-      lastPreviewedRef.current = key;
-      lastAppliedRef.current = key;
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      return;
-    }
-    if (key !== lastPreviewedRef.current) {
-      lastPreviewedRef.current = key;
-      onPreviewStyle?.(selectedTarget.id, draft.styles);
-    }
-    if (key === lastAppliedRef.current) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (key === lastAppliedRef.current) return;
-      lastAppliedRef.current = key;
-      onApplyPatch({ id: selectedTarget.id, kind: 'set-style', styles: draft.styles }, `Style: ${selectedTarget.label}`);
-    }, 1500);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [draft.styles, selectedTarget?.id, onPreviewStyle, onApplyPatch]);
-
   const targetForInspector = selectedTarget;
+  const changeTargetStyle = (key: keyof ManualEditStyles, value: string) => {
+    const nextStyles = { ...draft.styles, [key]: value };
+    onDraftChange({ ...draft, styles: nextStyles });
+    if (!targetForInspector) return;
+    const normalized = normalizeManualEditStyles({ [key]: value }, {
+      layoutEnabled: targetForInspector.isLayoutContainer,
+    });
+    if (!normalized.ok) {
+      onError(normalized.error);
+      return;
+    }
+    onError('');
+    onStyleChange?.(targetForInspector.id, normalized.styles, `Style: ${targetForInspector.label}`);
+  };
 
   return (
     <aside className="manual-edit-right">
@@ -88,10 +69,22 @@ export function ManualEditPanel({
         {targetForInspector ? (
           <StyleInspector
             styles={draft.styles}
-            onChange={(styles) => onDraftChange({ ...draft, styles })}
+            layoutEnabled={targetForInspector.isLayoutContainer}
+            onClearSelection={onClearSelection}
+            onChange={changeTargetStyle}
           />
         ) : !targetForInspector ? (
-          <PageInspector onPreviewStyle={onPreviewStyle} onApplyPatch={onApplyPatch} />
+          <PageInspector
+            onStyleChange={(styles) => {
+              const normalized = normalizeManualEditStyles(styles, { layoutEnabled: true });
+              if (!normalized.ok) {
+                onError(normalized.error);
+                return;
+              }
+              onError('');
+              onStyleChange?.('__body__', normalized.styles, 'Page styles');
+            }}
+          />
         ) : null}
 
         {error ? <div className="manual-edit-error">{error}</div> : null}
@@ -101,47 +94,37 @@ export function ManualEditPanel({
 }
 
 function PageInspector({
-  onPreviewStyle, onApplyPatch,
+  onStyleChange,
 }: {
-  onPreviewStyle?: (id: string, styles: Partial<ManualEditStyles>) => void;
-  onApplyPatch: (patch: ManualEditPatch, label: string) => void;
+  onStyleChange: (styles: Partial<ManualEditStyles>) => void;
 }) {
   const [bg, setBg] = useState('');
   const [font, setFont] = useState('');
   const [size, setSize] = useState('');
-  const initializedRef = useRef(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastAppliedRef = useRef<string>('');
-
-  useEffect(() => {
-    const styles: Partial<ManualEditStyles> = {
-      backgroundColor: bg,
-      fontFamily: font,
-      fontSize: size ? (/^\d+(\.\d+)?$/.test(size.trim()) ? `${size.trim()}px` : size.trim()) : '',
-    };
-    const key = JSON.stringify(styles);
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      lastAppliedRef.current = key;
-      return;
+  const update = (next: { bg?: string; font?: string; size?: string }) => {
+    if ('bg' in next) {
+      const value = next.bg ?? '';
+      setBg(value);
+      onStyleChange({ backgroundColor: value });
     }
-    onPreviewStyle?.('__body__', styles);
-    if (key === lastAppliedRef.current) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      lastAppliedRef.current = key;
-      onApplyPatch({ id: '__body__', kind: 'set-style', styles }, 'Page styles');
-    }, 1500);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bg, font, size]);
+    if ('font' in next) {
+      const value = next.font ?? '';
+      setFont(value);
+      onStyleChange({ fontFamily: value });
+    }
+    if ('size' in next) {
+      const value = next.size ?? '';
+      setSize(value);
+      onStyleChange({ fontSize: value });
+    }
+  };
 
   return (
     <div className="cc-inspector">
       <Section title="PAGE">
-        <ColorRow label="Background" value={bg} onChange={setBg} />
-        <FontRow value={font} onChange={setFont} />
-        <UnitRow label="Base size" value={size} onChange={setSize} unit="px" />
+        <ColorRow label="Background" value={bg} onChange={(value) => update({ bg: value })} />
+        <FontRow value={font} onChange={(value) => update({ font: value })} />
+        <UnitRow label="Base size" value={size} onChange={(value) => update({ size: value })} unit="px" autoUnit />
       </Section>
     </div>
   );
@@ -179,16 +162,113 @@ const EDITOR_SWATCH_COLORS = [
   '#ec4899',
 ] as const;
 
+type NormalizeResult =
+  | { ok: true; styles: Partial<ManualEditStyles> }
+  | { ok: false; error: string };
+
+const PX_STYLE_PROPS = new Set<keyof ManualEditStyles>([
+  'fontSize', 'letterSpacing', 'width', 'height', 'minHeight', 'gap',
+  'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+  'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+  'border', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+  'borderRadius',
+]);
+const COLOR_STYLE_PROPS = new Set<keyof ManualEditStyles>(['color', 'backgroundColor', 'borderColor']);
+const SELECT_STYLE_OPTIONS: Partial<Record<keyof ManualEditStyles, ReadonlyArray<string>>> = {
+  fontFamily: FONT_OPTS.map((option) => option.value),
+  fontWeight: WEIGHT_OPTS,
+  textAlign: ALIGN_OPTS,
+  flexDirection: DIRECTION_OPTS,
+  justifyContent: JUSTIFY_OPTS,
+  alignItems: ITEMS_OPTS,
+  borderStyle: BORDER_STYLE_OPTS,
+};
+const LAYOUT_STYLE_PROPS = new Set<keyof ManualEditStyles>(['gap', 'flexDirection', 'justifyContent', 'alignItems']);
+
+export function normalizeManualEditStyles(
+  styles: Partial<ManualEditStyles>,
+  { layoutEnabled }: { layoutEnabled: boolean },
+): NormalizeResult {
+  const normalized: Partial<ManualEditStyles> = {};
+  for (const [rawKey, rawValue] of Object.entries(styles) as Array<[keyof ManualEditStyles, string]>) {
+    if (LAYOUT_STYLE_PROPS.has(rawKey) && !layoutEnabled) continue;
+    const value = rawValue.trim();
+    if (value === '') {
+      normalized[rawKey] = '';
+      continue;
+    }
+    if (PX_STYLE_PROPS.has(rawKey)) {
+      const px = normalizePxValue(value);
+      if (!px) return { ok: false, error: `${styleLabel(rawKey)} must be a number or px value.` };
+      normalized[rawKey] = px;
+      continue;
+    }
+    if (COLOR_STYLE_PROPS.has(rawKey)) {
+      const color = normalizeHexColor(value);
+      if (!color) return { ok: false, error: `${styleLabel(rawKey)} must be a hex color.` };
+      normalized[rawKey] = color;
+      continue;
+    }
+    if (rawKey === 'opacity') {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return { ok: false, error: 'Opacity must be a number.' };
+      normalized.opacity = String(Math.max(0, Math.min(1, n)));
+      continue;
+    }
+    if (rawKey === 'lineHeight') {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0) return { ok: false, error: 'Line height must be a positive number.' };
+      normalized.lineHeight = String(n);
+      continue;
+    }
+    const options = SELECT_STYLE_OPTIONS[rawKey];
+    if (options) {
+      if (!options.includes(value)) return { ok: false, error: `${styleLabel(rawKey)} has an unsupported value.` };
+      normalized[rawKey] = value;
+      continue;
+    }
+    normalized[rawKey] = value;
+  }
+  return { ok: true, styles: normalized };
+}
+
+function normalizePxValue(value: string): string | null {
+  if (/^-?\d+(\.\d+)?$/.test(value)) return `${value}px`;
+  if (/^-?\d+(\.\d+)?px$/i.test(value)) return value.toLowerCase();
+  return null;
+}
+
+function normalizeHexColor(value: string): string | null {
+  const trimmed = value.trim();
+  if (/^#[0-9a-f]{6}$/i.test(trimmed)) return trimmed.toLowerCase();
+  if (/^#[0-9a-f]{3}$/i.test(trimmed)) {
+    const r = trimmed[1]!, g = trimmed[2]!, b = trimmed[3]!;
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  return null;
+}
+
+function styleLabel(key: keyof ManualEditStyles): string {
+  return key.replace(/[A-Z]/g, (match) => ` ${match.toLowerCase()}`);
+}
+
 function StyleInspector({
-  styles, onChange,
+  styles, layoutEnabled, onClearSelection, onChange,
 }: {
   styles: ManualEditStyles;
-  onChange: (styles: ManualEditStyles) => void;
+  layoutEnabled: boolean;
+  onClearSelection: () => void;
+  onChange: (key: keyof ManualEditStyles, value: string) => void;
 }) {
-  const u = (key: keyof ManualEditStyles, value: string) => onChange({ ...styles, [key]: value });
+  const u = (key: keyof ManualEditStyles, value: string) => onChange(key, value);
 
   return (
     <div className="cc-inspector">
+      <div className="cc-inspector-nav">
+        <button type="button" className="cc-inspector-page" onClick={onClearSelection} aria-label="Show page inspector">
+          Page
+        </button>
+      </div>
       <Section title="TYPOGRAPHY">
         <FontRow value={styles.fontFamily} onChange={(v) => u('fontFamily', v)} />
         <PairRow>
@@ -212,14 +292,17 @@ function StyleInspector({
         </PairRow>
       </Section>
 
-      <Section title="LAYOUT">
+      <Section title="LAYOUT" inactive={!layoutEnabled}>
+        {!layoutEnabled ? (
+          <p className="cc-section-hint">Select a container or group to edit layout.</p>
+        ) : null}
         <PairRow>
-          <UnitRow label="Gap" value={styles.gap} onChange={(v) => u('gap', v)} unit="px" autoUnit />
-          <DropdownRow label="Direction" value={styles.flexDirection} onChange={(v) => u('flexDirection', v)} options={DIRECTION_OPTS} />
+          <UnitRow label="Gap" value={styles.gap} onChange={(v) => u('gap', v)} unit="px" autoUnit disabled={!layoutEnabled} />
+          <DropdownRow label="Direction" value={styles.flexDirection} onChange={(v) => u('flexDirection', v)} options={DIRECTION_OPTS} disabled={!layoutEnabled} />
         </PairRow>
         <PairRow>
-          <DropdownRow label="Justify" value={styles.justifyContent} onChange={(v) => u('justifyContent', v)} options={JUSTIFY_OPTS} />
-          <DropdownRow label="Align" value={styles.alignItems} onChange={(v) => u('alignItems', v)} options={ITEMS_OPTS} />
+          <DropdownRow label="Justify" value={styles.justifyContent} onChange={(v) => u('justifyContent', v)} options={JUSTIFY_OPTS} disabled={!layoutEnabled} />
+          <DropdownRow label="Align" value={styles.alignItems} onChange={(v) => u('alignItems', v)} options={ITEMS_OPTS} disabled={!layoutEnabled} />
         </PairRow>
       </Section>
 
@@ -251,9 +334,9 @@ function StyleInspector({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, inactive }: { title: string; children: React.ReactNode; inactive?: boolean }) {
   return (
-    <section className="cc-section">
+    <section className={`cc-section${inactive ? ' cc-section-inactive' : ''}`}>
       <header className="cc-section-head">{title}</header>
       <div className="cc-section-body">{children}</div>
     </section>
@@ -264,36 +347,50 @@ function PairRow({ children }: { children: React.ReactNode }) {
   return <div className="cc-pair">{children}</div>;
 }
 
-function UnitRow({ label, value, onChange, unit, autoUnit }: {
+function UnitRow({ label, value, onChange, unit, autoUnit, disabled }: {
   label: string; value: string; onChange: (v: string) => void;
-  unit: string; autoUnit?: boolean;
+  unit: string; autoUnit?: boolean; disabled?: boolean;
 }) {
-  const display = value;
-  const handle = (raw: string) => {
+  const display = unit === 'px' ? stripPxUnit(value) : value;
+  const step = unit === 'px' ? 1 : 0.1;
+  const canStep = !disabled && isNumericInput(display);
+  const valueFromDisplay = (raw: string) => {
     const trimmed = raw.trim();
-    if (autoUnit && trimmed && /^-?\d+(\.\d+)?$/.test(trimmed)) onChange(`${trimmed}px`);
-    else onChange(raw);
+    if (autoUnit && trimmed && isNumericInput(trimmed)) return `${trimmed}px`;
+    if (autoUnit && /^-?\d+(\.\d+)?px$/i.test(trimmed)) return trimmed.toLowerCase();
+    return raw;
+  };
+  const handle = (raw: string) => {
+    const next = valueFromDisplay(raw);
+    if (next !== value) onChange(next);
+  };
+  const stepBy = (direction: -1 | 1) => {
+    if (!canStep) return;
+    const next = formatSteppedNumber(Number(display) + direction * step, display, step);
+    onChange(valueFromDisplay(next));
   };
   return (
     <label className="cc-row">
       <span className="cc-label">{label}</span>
       <span className="cc-value">
-        <input value={display} placeholder="" onChange={(e) => onChange(e.currentTarget.value)} onBlur={(e) => handle(e.currentTarget.value)} />
+        <button type="button" className="cc-step" disabled={!canStep} aria-label={`${label} decrease`} onClick={() => stepBy(-1)}>−</button>
+        <input value={display} placeholder="" disabled={disabled} onChange={(e) => onChange(valueFromDisplay(e.currentTarget.value))} onBlur={(e) => handle(e.currentTarget.value)} />
+        <button type="button" className="cc-step" disabled={!canStep} aria-label={`${label} increase`} onClick={() => stepBy(1)}>+</button>
         {unit ? <em className="cc-unit">{unit}</em> : null}
       </span>
     </label>
   );
 }
 
-function DropdownRow({ label, value, onChange, options, placeholder }: {
+function DropdownRow({ label, value, onChange, options, placeholder, disabled }: {
   label: string; value: string; onChange: (v: string) => void;
-  options: ReadonlyArray<string>; placeholder?: string;
+  options: ReadonlyArray<string>; placeholder?: string; disabled?: boolean;
 }) {
   return (
     <label className="cc-row">
       <span className="cc-label">{label}</span>
       <span className="cc-value cc-select">
-        <select value={value} onChange={(e) => onChange(e.currentTarget.value)}>
+        <select value={value} disabled={disabled} onChange={(e) => onChange(e.currentTarget.value)}>
           {!options.includes(value) && value ? <option value={value}>{value}</option> : null}
           {options.map((opt) => <option key={opt || '__'} value={opt}>{opt || (placeholder ?? '–')}</option>)}
         </select>
@@ -421,18 +518,54 @@ function QuadRow({ label, values, onChange }: {
 }
 
 function QuadCell({ axis, value, onChange }: { axis: string; value: string; onChange: (v: string) => void }) {
+  const display = stripPxUnit(value);
+  const canStep = isNumericInput(display);
+  const stepBy = (direction: -1 | 1) => {
+    if (!canStep) return;
+    onChange(`${formatSteppedNumber(Number(display) + direction, display, 1)}px`);
+  };
   return (
     <span className="cc-quad-cell">
       <em className="cc-quad-axis">{axis}</em>
-      <input value={value} placeholder="0"
-        onChange={(e) => onChange(e.currentTarget.value)}
+      <button type="button" className="cc-step cc-step-quad" disabled={!canStep} aria-label={`${axis} decrease`} onClick={() => stepBy(-1)}>−</button>
+      <input value={display} placeholder="0"
+        onChange={(e) => {
+          const raw = e.currentTarget.value.trim();
+          if (raw === '') onChange('');
+          else if (isNumericInput(raw)) onChange(`${raw}px`);
+          else if (/^-?\d+(\.\d+)?px$/i.test(raw)) onChange(raw.toLowerCase());
+          else onChange(e.currentTarget.value);
+        }}
         onBlur={(e) => {
           const v = e.currentTarget.value.trim();
-          if (v && /^-?\d+(\.\d+)?$/.test(v)) onChange(`${v}px`);
+          const next = v && isNumericInput(v) ? `${v}px` : e.currentTarget.value;
+          if (next !== value) onChange(next);
         }} />
+      <button type="button" className="cc-step cc-step-quad" disabled={!canStep} aria-label={`${axis} increase`} onClick={() => stepBy(1)}>+</button>
       <em className="cc-quad-unit">px</em>
     </span>
   );
+}
+
+function stripPxUnit(value: string): string {
+  const match = value.trim().match(/^(-?\d+(?:\.\d+)?)px$/i);
+  return match?.[1] ?? value;
+}
+
+function isNumericInput(value: string): boolean {
+  return /^-?\d+(\.\d+)?$/.test(value.trim());
+}
+
+function formatSteppedNumber(value: number, current: string, step: number): string {
+  const decimals = Math.max(decimalPlaces(current), decimalPlaces(String(step)));
+  return decimals > 0
+    ? value.toFixed(decimals).replace(/\.?0+$/, '')
+    : String(Math.round(value));
+}
+
+function decimalPlaces(value: string): number {
+  const match = value.match(/\.(\d+)/);
+  return match?.[1]?.length ?? 0;
 }
 
 function sideToProp(base: 'padding' | 'margin', side: 't' | 'r' | 'b' | 'l'): keyof ManualEditStyles {

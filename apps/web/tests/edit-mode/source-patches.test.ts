@@ -92,15 +92,33 @@ describe('manual edit source patches', () => {
     const result = applyManualEditPatch(baseSource, {
       kind: 'set-style',
       id: 'card',
-      styles: { color: '', backgroundColor: 'blue', fontSize: '24px' },
+      styles: {
+        color: '',
+        backgroundColor: '#ff0000',
+        fontSize: '24px',
+        paddingTop: '12px',
+        marginLeft: '4px',
+        borderTopWidth: '2px',
+        borderStyle: 'solid',
+        borderColor: '#000000',
+        borderRadius: '8px',
+        opacity: '0.5',
+      },
     });
 
     expect(result.ok).toBe(true);
     const styles = readManualEditStyles(result.source, 'card');
     expect(styles.color).toBe('');
-    expect(styles.backgroundColor).toBe('blue');
+    expect(styles.backgroundColor).toBe('rgb(255, 0, 0)');
     expect(styles.fontSize).toBe('24px');
-    expect(styles.padding).toBe('8px');
+    expect(styles.padding).toBe('12px 8px 8px');
+    expect(styles.paddingTop).toBe('12px');
+    expect(styles.marginLeft).toBe('4px');
+    expect(styles.borderTopWidth).toBe('2px');
+    expect(styles.borderStyle).toBe('solid');
+    expect(styles.borderColor).toBe('rgb(0, 0, 0)');
+    expect(styles.borderRadius).toBe('8px');
+    expect(styles.opacity).toBe('0.5');
   });
 
   it('applies attributes additively and preserves class/style unless explicitly updated', () => {

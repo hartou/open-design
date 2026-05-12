@@ -365,10 +365,7 @@ test('change pet opens pet settings and updates the custom companion draft', asy
   await expect(dialog).toHaveCount(0);
 });
 
-test.skip('project actions toolbar enables Continue in CLI after DESIGN.md and surfaces stale provenance fallback', async ({ page }) => {
-  // Skipped: the project-actions toolbar (Finalize design package + Continue
-  // in CLI) was removed from the project header. Reinstate this test once
-  // those entry points have a new home.
+test('project actions toolbar enables Continue in CLI after DESIGN.md and surfaces stale provenance fallback', async ({ page }) => {
   await page.goto('/');
   await createProject(page, `Project actions toolbar flow ${Date.now()}`);
   await expectWorkspaceReady(page);

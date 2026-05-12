@@ -106,7 +106,7 @@ export function buildManualEditBridge(enabled: boolean): string {
     var attrs = {};
     for (var i = 0; i < el.attributes.length; i++) {
       var attr = el.attributes[i];
-      if (!attr || attr.name.indexOf('data-od-runtime') === 0) continue;
+      if (!attr || attr.name.indexOf('data-od-runtime') === 0 || attr.name === 'data-od-edit-selected') continue;
       attrs[attr.name] = attr.value;
     }
     return attrs;
@@ -116,6 +116,10 @@ export function buildManualEditBridge(enabled: boolean): string {
     var styles = {};
     styleProps.forEach(function(prop){ styles[prop] = el.style[prop] || computed[prop] || ''; });
     return styles;
+  }
+  function isLayoutContainer(el){
+    var display = window.getComputedStyle(el).display || '';
+    return display.indexOf('flex') >= 0 || display.indexOf('grid') >= 0;
   }
   function targetFrom(el, includeOuterHtml){
     var rect = el.getBoundingClientRect();
@@ -142,7 +146,8 @@ export function buildManualEditBridge(enabled: boolean): string {
       fields: fields,
       attributes: attrsFor(el),
       styles: stylesFor(el),
-      outerHtml: includeOuterHtml ? (el.outerHTML || '').replace(/\\sdata-od-runtime-id="[^"]*"/g, '').replace(/\\sdata-od-source-path="[^"]*"/g, '') : ''
+      isLayoutContainer: isLayoutContainer(el),
+      outerHtml: includeOuterHtml ? (el.outerHTML || '').replace(/\\sdata-od-runtime-id="[^"]*"/g, '').replace(/\\sdata-od-source-path="[^"]*"/g, '').replace(/\\sdata-od-edit-selected="[^"]*"/g, '') : ''
     };
   }
   function allTargets(){
@@ -159,6 +164,16 @@ export function buildManualEditBridge(enabled: boolean): string {
   function postTargets(){
     if (!enabled) return;
     window.parent.postMessage({ type: 'od-edit-targets', targets: allTargets() }, '*');
+  }
+  function clearSelectedTarget(){
+    var selected = document.querySelectorAll('[data-od-edit-selected]');
+    for (var i = 0; i < selected.length; i++) selected[i].removeAttribute('data-od-edit-selected');
+  }
+  function setSelectedTarget(id){
+    clearSelectedTarget();
+    if (!id) return;
+    var el = findById(id);
+    if (el) el.setAttribute('data-od-edit-selected', 'true');
   }
   function closestTarget(event){
     var el = event.target;
@@ -195,18 +210,24 @@ export function buildManualEditBridge(enabled: boolean): string {
     }
     return null;
   }
-  function applyPreviewStyles(id, styles){
+  function applyPreviewStyles(id, styles, version){
     var el = findById(id);
-    if (!el) return;
+    if (!el) {
+      window.parent.postMessage({ type: 'od-edit-preview-style-applied', id: id || '', version: Number(version) || 0, ok: false, error: 'Target not found' }, '*');
+      return;
+    }
     var keys = Object.keys(styles || {});
-    for (var i = 0; i < keys.length; i++) {
-      var key = keys[i];
-      var value = styles[key];
-      var cssName = camelToKebab(key);
-      try {
+    try {
+      for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        var value = styles[key];
+        var cssName = camelToKebab(key);
         if (typeof value !== 'string' || value.trim() === '') el.style.removeProperty(cssName);
         else el.style.setProperty(cssName, value.trim());
-      } catch (_e) {}
+      }
+      window.parent.postMessage({ type: 'od-edit-preview-style-applied', id: id, version: Number(version) || 0, ok: true }, '*');
+    } catch (e) {
+      window.parent.postMessage({ type: 'od-edit-preview-style-applied', id: id, version: Number(version) || 0, ok: false, error: e && e.message ? String(e.message) : 'Could not apply preview styles' }, '*');
     }
   }
   window.addEventListener('message', function(ev){
@@ -214,11 +235,16 @@ export function buildManualEditBridge(enabled: boolean): string {
     if (ev.data.type === 'od-edit-mode') {
       enabled = !!ev.data.enabled;
       document.documentElement.toggleAttribute('data-od-edit-mode', enabled);
+      if (!enabled) clearSelectedTarget();
       if (enabled) setTimeout(postTargets, 0);
       return;
     }
+    if (ev.data.type === 'od-edit-selected-target') {
+      setSelectedTarget(ev.data.id || null);
+      return;
+    }
     if (ev.data.type === 'od-edit-preview-style') {
-      applyPreviewStyles(ev.data.id, ev.data.styles || {});
+      applyPreviewStyles(ev.data.id, ev.data.styles || {}, ev.data.version);
       return;
     }
   });
@@ -244,5 +270,10 @@ html[data-od-edit-mode] [data-od-id],
 html[data-od-edit-mode] [data-od-runtime-id] { outline: 1px dashed rgba(37, 99, 235, 0.35); outline-offset: 3px; }
 html[data-od-edit-mode] [data-od-id]:hover,
 html[data-od-edit-mode] [data-od-runtime-id]:hover { outline: 2px solid #2563eb; }
+html[data-od-edit-mode] [data-od-edit-selected] {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.16);
+}
 </style>`;
 }

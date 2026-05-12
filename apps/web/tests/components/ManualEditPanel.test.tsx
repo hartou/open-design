@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
-import { ManualEditPanel, emptyManualEditDraft, manualEditPatchSummary } from '../../src/components/ManualEditPanel';
+import { ManualEditPanel, emptyManualEditDraft, manualEditPatchSummary, normalizeManualEditStyles } from '../../src/components/ManualEditPanel';
 import { emptyManualEditStyles, type ManualEditTarget } from '../../src/edit-mode/types';
 
 const target: ManualEditTarget = {
@@ -16,6 +16,7 @@ const target: ManualEditTarget = {
   fields: { text: 'Original' },
   attributes: { 'data-od-id': 'hero-title' },
   styles: emptyManualEditStyles(),
+  isLayoutContainer: false,
   outerHtml: '<h1 data-od-id="hero-title">Original</h1>',
 };
 
@@ -51,13 +52,32 @@ describe('ManualEditPanel', () => {
     expect(host.textContent).not.toContain('Content');
   });
 
+  it('allows returning from an element inspector to the page inspector', () => {
+    const onClearSelection = vi.fn();
+    renderPanel({ onClearSelection });
+
+    const pageButton = host.querySelector('button[aria-label="Show page inspector"]') as HTMLButtonElement | null;
+    if (!pageButton) throw new Error('Page inspector button not found');
+
+    act(() => {
+      pageButton.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onClearSelection).toHaveBeenCalledTimes(1);
+  });
+
   it('normalizes font stacks and writes a usable font-family value', () => {
     const onDraftChange = vi.fn();
+    const onStyleChange = vi.fn();
     renderPanel({
       onDraftChange,
+      onStyleChange,
       styles: {
         ...emptyManualEditStyles(),
         fontFamily: '"Roboto", sans-serif',
+        fontSize: '32px',
+        color: '#111111',
+        paddingTop: '8px',
       },
     });
 
@@ -73,6 +93,56 @@ describe('ManualEditPanel', () => {
     expect(onDraftChange).toHaveBeenCalledWith(expect.objectContaining({
       styles: expect.objectContaining({ fontFamily: 'Georgia, serif' }),
     }));
+    expect(onStyleChange).toHaveBeenCalledWith('hero-title', { fontFamily: 'Georgia, serif' }, 'Style: Hero Title');
+    expect(onStyleChange).not.toHaveBeenCalledWith(
+      'hero-title',
+      expect.objectContaining({ fontSize: '32px', color: '#111111', paddingTop: '8px' }),
+      'Style: Hero Title',
+    );
+  });
+
+  it('shows px-backed values without px in numeric inputs', () => {
+    renderPanel({
+      styles: {
+        ...emptyManualEditStyles(),
+        fontSize: '32px',
+      },
+    });
+
+    const sizeRow = Array.from(host.querySelectorAll('.cc-row'))
+      .find((row) => row.textContent?.includes('Size'));
+    const sizeInput = sizeRow?.querySelector('input') as HTMLInputElement | null;
+    if (!sizeInput) throw new Error('Size input not found');
+
+    expect(sizeInput.value).toBe('32');
+  });
+
+  it('increments normal rows and quad cells with normalized values', () => {
+    const onStyleChange = vi.fn();
+    renderPanel({
+      onStyleChange,
+      styles: {
+        ...emptyManualEditStyles(),
+        fontSize: '32px',
+        opacity: '0.5',
+        paddingTop: '8px',
+      },
+    });
+
+    const sizeIncrease = host.querySelector('button[aria-label="Size increase"]') as HTMLButtonElement | null;
+    const opacityIncrease = host.querySelector('button[aria-label="Opacity increase"]') as HTMLButtonElement | null;
+    const paddingTopDecrease = host.querySelector('.cc-quad button[aria-label="T decrease"]') as HTMLButtonElement | null;
+    if (!sizeIncrease || !opacityIncrease || !paddingTopDecrease) throw new Error('Stepper button not found');
+
+    act(() => {
+      sizeIncrease.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+      opacityIncrease.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+      paddingTopDecrease.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onStyleChange).toHaveBeenCalledWith('hero-title', { fontSize: '33px' }, 'Style: Hero Title');
+    expect(onStyleChange).toHaveBeenCalledWith('hero-title', { opacity: '0.6' }, 'Style: Hero Title');
+    expect(onStyleChange).toHaveBeenCalledWith('hero-title', { paddingTop: '7px' }, 'Style: Hero Title');
   });
 
   it('does not persist an unchanged target style when the inspector opens', () => {
@@ -91,6 +161,62 @@ describe('ManualEditPanel', () => {
     }
   });
 
+  it('normalizes valid style values before host preview/persistence', () => {
+    expect(normalizeManualEditStyles({
+      fontSize: '48',
+      color: '#f00',
+      opacity: '2',
+      lineHeight: '1.4',
+    }, { layoutEnabled: true })).toEqual({
+      ok: true,
+      styles: {
+        fontSize: '48px',
+        color: '#ff0000',
+        opacity: '1',
+        lineHeight: '1.4',
+      },
+    });
+  });
+
+  it('rejects invalid style values before host preview/persistence', () => {
+    expect(normalizeManualEditStyles({ color: 'tomato' }, { layoutEnabled: true })).toEqual({
+      ok: false,
+      error: 'color must be a hex color.',
+    });
+  });
+
+  it('treats empty values as inline style clears', () => {
+    expect(normalizeManualEditStyles({ fontSize: '', color: '' }, { layoutEnabled: true })).toEqual({
+      ok: true,
+      styles: { fontSize: '', color: '' },
+    });
+  });
+
+  it('does not validate unchanged computed line-height values on blur', () => {
+    const onError = vi.fn();
+    const onStyleChange = vi.fn();
+    renderPanel({
+      onError,
+      onStyleChange,
+      styles: {
+        ...emptyManualEditStyles(),
+        lineHeight: '48.96px',
+      },
+    });
+
+    const lineInput = Array.from(host.querySelectorAll('.cc-row'))
+      .find((row) => row.textContent?.includes('Line'))
+      ?.querySelector('input') as HTMLInputElement | null;
+    if (!lineInput) throw new Error('Line input not found');
+
+    act(() => {
+      lineInput.dispatchEvent(new dom.window.FocusEvent('blur', { bubbles: true }));
+    });
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(onStyleChange).not.toHaveBeenCalled();
+  });
+
   it('does not persist unchanged page styles when no target is selected', () => {
     vi.useFakeTimers();
     try {
@@ -107,6 +233,139 @@ describe('ManualEditPanel', () => {
     }
   });
 
+  it('emits only the changed page style field', () => {
+    const onStyleChange = vi.fn();
+    renderPanel({ onStyleChange, selectedTarget: null });
+
+    const bgSwatch = host.querySelector('button[aria-label="Pick Background"]') as HTMLButtonElement | null;
+    if (!bgSwatch) throw new Error('Background swatch not found');
+
+    act(() => {
+      bgSwatch.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    });
+    const colorTile = host.querySelector('button[aria-label="#3b82f6"]') as HTMLButtonElement | null;
+    if (!colorTile) throw new Error('Background color tile not found');
+    act(() => {
+      colorTile.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onStyleChange).toHaveBeenCalledWith('__body__', { backgroundColor: '#3b82f6' }, 'Page styles');
+    expect(onStyleChange).not.toHaveBeenCalledWith(
+      '__body__',
+      expect.objectContaining({ fontFamily: expect.any(String) }),
+      'Page styles',
+    );
+    expect(onStyleChange).not.toHaveBeenCalledWith(
+      '__body__',
+      expect.objectContaining({ fontSize: expect.any(String) }),
+      'Page styles',
+    );
+  });
+
+  it('does not emit untouched page fields when changing the page font', () => {
+    const onStyleChange = vi.fn();
+    renderPanel({ onStyleChange, selectedTarget: null });
+
+    const fontSelect = host.querySelector('.cc-row select') as HTMLSelectElement | null;
+    if (!fontSelect) throw new Error('Font select not found');
+
+    act(() => {
+      fontSelect.value = 'Georgia, serif';
+      fontSelect.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    });
+
+    expect(onStyleChange).toHaveBeenCalledWith('__body__', { fontFamily: 'Georgia, serif' }, 'Page styles');
+    expect(onStyleChange).not.toHaveBeenCalledWith(
+      '__body__',
+      expect.objectContaining({ backgroundColor: expect.any(String) }),
+      'Page styles',
+    );
+    expect(onStyleChange).not.toHaveBeenCalledWith(
+      '__body__',
+      expect.objectContaining({ fontSize: expect.any(String) }),
+      'Page styles',
+    );
+  });
+
+  it('keeps explicit empty page values as field-specific clears', () => {
+    const onStyleChange = vi.fn();
+    renderPanel({ onStyleChange, selectedTarget: null });
+
+    const fontSelect = host.querySelector('.cc-row select') as HTMLSelectElement | null;
+    if (!fontSelect) throw new Error('Font select not found');
+
+    act(() => {
+      fontSelect.value = '';
+      fontSelect.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    });
+
+    expect(onStyleChange).toHaveBeenCalledWith('__body__', { fontFamily: '' }, 'Page styles');
+    expect(onStyleChange).not.toHaveBeenCalledWith(
+      '__body__',
+      expect.objectContaining({ backgroundColor: expect.any(String), fontFamily: expect.any(String) }),
+      'Page styles',
+    );
+  });
+
+  it('renders layout as inactive for non-layout single targets', () => {
+    const onStyleChange = vi.fn();
+    renderPanel({
+      onStyleChange,
+      styles: {
+        ...emptyManualEditStyles(),
+        gap: 'normal',
+        flexDirection: 'row',
+      },
+    });
+
+    const layoutSection = sectionByTitle('LAYOUT');
+    expect(layoutSection.classList.contains('cc-section-inactive')).toBe(true);
+    expect(layoutSection.textContent).toContain('Select a container or group to edit layout.');
+    const gapInput = layoutSection.querySelector('input') as HTMLInputElement | null;
+    const directionSelect = layoutSection.querySelector('select') as HTMLSelectElement | null;
+    if (!gapInput || !directionSelect) throw new Error('Layout controls not found');
+
+    expect(gapInput.disabled).toBe(true);
+    expect(directionSelect.disabled).toBe(true);
+    expect(normalizeManualEditStyles({ gap: '12', flexDirection: 'column' }, { layoutEnabled: false })).toEqual({
+      ok: true,
+      styles: {},
+    });
+  });
+
+  it('enables layout controls for flex or grid containers', () => {
+    const onStyleChange = vi.fn();
+    renderPanel({
+      onStyleChange,
+      selectedTarget: { ...target, isLayoutContainer: true },
+      styles: {
+        ...emptyManualEditStyles(),
+        gap: '8px',
+        flexDirection: 'row',
+      },
+    });
+
+    const layoutSection = sectionByTitle('LAYOUT');
+    expect(layoutSection.classList.contains('cc-section-inactive')).toBe(false);
+    expect(layoutSection.textContent).not.toContain('Select a container or group to edit layout.');
+    const gapInput = layoutSection.querySelector('input') as HTMLInputElement | null;
+    const directionSelect = layoutSection.querySelector('select') as HTMLSelectElement | null;
+    const gapIncrease = layoutSection.querySelector('button[aria-label="Gap increase"]') as HTMLButtonElement | null;
+    if (!gapInput || !directionSelect) throw new Error('Layout controls not found');
+    expect(gapInput.disabled).toBe(false);
+    expect(directionSelect.disabled).toBe(false);
+    if (!gapIncrease) throw new Error('Gap increase control not found');
+
+    act(() => {
+      gapIncrease.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+      directionSelect.value = 'column';
+      directionSelect.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    });
+
+    expect(onStyleChange).toHaveBeenCalledWith('hero-title', { gap: '9px' }, 'Style: Hero Title');
+    expect(onStyleChange).toHaveBeenCalledWith('hero-title', { flexDirection: 'column' }, 'Style: Hero Title');
+  });
+
   it('summarizes full-source history entries without rendering the full file', () => {
     const source = '<html><body>' + 'x'.repeat(10_000) + '</body></html>';
 
@@ -116,10 +375,19 @@ describe('ManualEditPanel', () => {
     expect(manualEditPatchSummary({ kind: 'set-full-source', source })).not.toContain('x'.repeat(100));
   });
 
+  function sectionByTitle(title: string): HTMLElement {
+    const section = Array.from(host.querySelectorAll('.cc-section'))
+      .find((candidate) => candidate.querySelector('.cc-section-head')?.textContent === title) as HTMLElement | undefined;
+    if (!section) throw new Error(`${title} section not found`);
+    return section;
+  }
+
   function renderPanel({
     onDraftChange = vi.fn(),
     onApplyPatch = vi.fn(),
     onError = vi.fn(),
+    onStyleChange = vi.fn(),
+    onClearSelection = vi.fn(),
     attributesText = '{}',
     selectedTarget = target,
     styles = emptyManualEditStyles(),
@@ -127,6 +395,8 @@ describe('ManualEditPanel', () => {
     onDraftChange?: ReturnType<typeof vi.fn>;
     onApplyPatch?: ReturnType<typeof vi.fn>;
     onError?: ReturnType<typeof vi.fn>;
+    onStyleChange?: ReturnType<typeof vi.fn>;
+    onClearSelection?: ReturnType<typeof vi.fn>;
     attributesText?: string;
     selectedTarget?: ManualEditTarget | null;
     styles?: ReturnType<typeof emptyManualEditStyles>;
@@ -150,8 +420,10 @@ describe('ManualEditPanel', () => {
           canRedo={false}
           onSelectTarget={vi.fn()}
           onDraftChange={onDraftChange}
+          onStyleChange={onStyleChange}
           onApplyPatch={onApplyPatch}
           onError={onError}
+          onClearSelection={onClearSelection}
           onCancelDraft={vi.fn()}
           onUndo={vi.fn()}
           onRedo={vi.fn()}
