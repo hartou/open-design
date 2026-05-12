@@ -38,6 +38,7 @@ export type ToolPackCliOptions = {
   signed?: boolean;
   silent?: boolean;
   to?: string;
+  updateAction?: string;
 };
 
 export type ToolPackRoots = {

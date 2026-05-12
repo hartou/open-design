@@ -70,6 +70,8 @@ const residualAllowedExactPaths = new Set([
   "tools/pack/esbuild.config.mjs",
   "tools/pr/bin/tools-pr.mjs",
   "tools/pr/esbuild.config.mjs",
+  "tools/serve/bin/tools-serve.mjs",
+  "tools/serve/esbuild.config.mjs",
   "tools/pack/resources/mac/notarize.cjs",
   // electron-builder hook path; CJS compatibility entry used by tools-pack desktop builds.
   "tools/pack/resources/web-standalone-after-pack.cjs",
@@ -377,6 +379,7 @@ const toolsRootAllowlist = new Map<string, "directory" | "file">([
   ["dev", "directory"],
   ["pack", "directory"],
   ["pr", "directory"],
+  ["serve", "directory"],
 ]);
 
 async function checkToolsLayout(): Promise<boolean> {
@@ -390,7 +393,7 @@ async function checkToolsLayout(): Promise<boolean> {
     const repositoryPath = `tools/${entry.name}${entry.isDirectory() ? "/" : ""}`;
 
     if (expected == null) {
-      violations.push(`${repositoryPath} -> tools/ top-level entries are allowlisted; expected only AGENTS.md, dev/, pack/, and pr/`);
+      violations.push(`${repositoryPath} -> tools/ top-level entries are allowlisted; expected only AGENTS.md, dev/, pack/, pr/, and serve/`);
       continue;
     }
 

@@ -64,7 +64,8 @@ function addSharedOptions(command: CacCommand) {
     .option("--json", "print JSON")
     .option("--namespace <name>", "runtime namespace")
     .option("--expr <expression>", "desktop inspect eval expression")
-    .option("--path <path>", "desktop inspect screenshot path");
+    .option("--path <path>", "desktop inspect screenshot path")
+    .option("--update-action <action>", "desktop update action: status|check|download|install");
 }
 
 // Per-platform `--to` help text mirroring resolveToolPackBuildOutput in

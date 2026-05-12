@@ -360,6 +360,7 @@ export async function startPackagedSidecars(
   await mkdir(paths.logsRoot, { recursive: true });
   await mkdir(paths.desktopLogsRoot, { recursive: true });
   await mkdir(paths.runtimeRoot, { recursive: true });
+  await mkdir(paths.updateRoot, { recursive: true });
   await mkdir(paths.electronUserDataRoot, { recursive: true });
   await mkdir(paths.electronSessionDataRoot, { recursive: true });
 
