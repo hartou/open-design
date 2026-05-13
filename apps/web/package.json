@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
-    "@clerk/nextjs": "^7.3.3",
+    "@clerk/clerk-react": "^5.61.3",
     "@open-design/contracts": "workspace:*",
     "@open-design/platform": "workspace:*",
     "@open-design/sidecar": "workspace:*",
