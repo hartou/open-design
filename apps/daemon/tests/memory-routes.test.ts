@@ -52,7 +52,7 @@ beforeEach(async () => {
 
 async function readNextSseEvent(
   reader: ReadableStreamDefaultReader<Uint8Array>,
-  decoder: TextDecoder,
+  decoder: InstanceType<typeof TextDecoder>,
   state: { buffer: string },
 ): Promise<SseEvent> {
   while (true) {

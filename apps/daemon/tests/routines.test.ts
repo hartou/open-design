@@ -185,7 +185,7 @@ describe('routine validation', () => {
       validateSchedule({ kind: 'weekly', weekday: 9 as 0, time: '09:00', timezone: 'UTC' }),
     ).toThrow(/weekly\.weekday/);
     expect(() =>
-      validateTarget({ mode: 'teleport' } as { mode: 'teleport' }),
+      validateTarget({ mode: 'teleport' } as unknown as Parameters<typeof validateTarget>[0]),
     ).toThrow(/Unsupported routine target mode/);
   });
 
