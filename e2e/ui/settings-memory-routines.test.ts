@@ -463,4 +463,54 @@ test.describe('Settings Memory and Routines flows', () => {
     await row.getByRole('button', { name: 'History' }).click();
     await expect(dialog.getByText('No runs yet.')).toBeVisible();
   });
+
+  test('keeps the routine form open when creating a routine fails', async ({ page }) => {
+    await seedSettingsBase(page);
+
+    const projects = [{ id: 'proj-1', name: 'Routine Test Project' }];
+
+    await page.route('**/api/projects', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ projects }),
+      });
+    });
+
+    await page.route('**/api/routines', async (route) => {
+      const method = route.request().method();
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ routines: [] }),
+        });
+        return;
+      }
+      if (method === 'POST') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'provider unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404, body: '{}' });
+    });
+
+    const dialog = await openRoutinesSettings(page);
+
+    await dialog.getByRole('button', { name: 'New routine' }).click();
+    await dialog.getByLabel('Name').fill('Weekly digest');
+    await dialog.getByLabel('Prompt').fill('Summarize GitHub and design activity.');
+    await dialog.getByRole('tab', { name: 'Weekly' }).click();
+    await dialog.getByRole('button', { name: 'Wed' }).click();
+    await dialog.getByText('Reuse an existing project', { exact: true }).click();
+    await dialog.getByRole('combobox').nth(1).selectOption('proj-1');
+    await dialog.getByRole('button', { name: 'Create' }).click();
+
+    await expect(dialog.getByLabel('Name')).toHaveValue('Weekly digest');
+    await expect(dialog.getByLabel('Prompt')).toHaveValue('Summarize GitHub and design activity.');
+    await expect(dialog.getByText('No routines yet.')).toBeVisible();
+  });
 });

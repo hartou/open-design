@@ -466,6 +466,51 @@ describe('RoutinesSection', () => {
     expect(await screen.findByText('No runs yet.')).toBeTruthy();
   });
 
+  it('falls back to the empty history state when loading run history fails', async () => {
+    const routines = [{
+      id: 'routine-1',
+      name: 'Morning briefing',
+      prompt: 'Morning summary',
+      schedule: { kind: 'daily', time: '09:00', timezone: 'UTC' },
+      target: { mode: 'create_each_run' },
+      enabled: true,
+      nextRunAt: Date.now() + 3600_000,
+      lastRun: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }];
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      if (url === '/api/routines' && (!init || init.method === undefined)) {
+        return new Response(JSON.stringify({ routines }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url === '/api/projects' && (!init || init.method === undefined)) {
+        return new Response(JSON.stringify({ projects: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url === '/api/routines/routine-1/runs?limit=10') {
+        return new Response(JSON.stringify({ error: 'history unavailable' }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    }) as typeof fetch;
+
+    render(<RoutinesSection />);
+
+    const row = (await screen.findByText('Morning briefing')).closest('li')!;
+    fireEvent.click(within(row).getByRole('button', { name: 'History' }));
+
+    expect(await screen.findByText('No runs yet.')).toBeTruthy();
+  });
+
   it('shows an error alert when the initial routines load fails', async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = input.toString();
