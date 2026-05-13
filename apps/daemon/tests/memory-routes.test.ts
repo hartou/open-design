@@ -42,7 +42,10 @@ beforeAll(async () => {
   })) as StartedServer;
   baseUrl = started.url;
   server = started.server;
-  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  globalThis.fetch = async (
+    input: Parameters<typeof fetch>[0],
+    init?: Parameters<typeof fetch>[1],
+  ) => {
     const url = typeof input === 'string'
       ? input
       : input instanceof URL
