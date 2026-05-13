@@ -513,4 +513,54 @@ test.describe('Settings Memory and Routines flows', () => {
     await expect(dialog.getByLabel('Prompt')).toHaveValue('Summarize GitHub and design activity.');
     await expect(dialog.getByText('No routines yet.')).toBeVisible();
   });
+
+  test('keeps routine history collapsed when Run now fails', async ({ page }) => {
+    await seedSettingsBase(page);
+
+    const routines = [
+      {
+        id: 'routine-1',
+        name: 'Weekly digest',
+        prompt: 'Summarize GitHub and design activity.',
+        schedule: { kind: 'weekly', weekday: 3, time: '09:00', timezone: 'UTC' },
+        target: { mode: 'create_each_run' },
+        enabled: true,
+        nextRunAt: Date.now() + 3600_000,
+        lastRun: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    ];
+
+    await page.route('**/api/projects', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ projects: [] }),
+      });
+    });
+
+    await page.route('**/api/routines', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ routines }),
+      });
+    });
+
+    await page.route('**/api/routines/routine-1/run', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'agent unavailable' }),
+      });
+    });
+
+    const dialog = await openRoutinesSettings(page);
+    const row = dialog.locator('.routines-item', { hasText: 'Weekly digest' }).first();
+    await expect(row).toBeVisible();
+    await row.getByRole('button', { name: 'Run now' }).click();
+    await expect(row.getByRole('button', { name: 'History' })).toBeVisible();
+    await expect(row.getByRole('button', { name: 'Hide history' })).toHaveCount(0);
+  });
 });

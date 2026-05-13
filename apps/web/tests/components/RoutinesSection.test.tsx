@@ -623,6 +623,56 @@ describe('RoutinesSection', () => {
     expect(within(card).queryByRole('button', { name: 'Hide history' })).toBeNull();
   });
 
+  it('shows an error alert when pausing a routine fails and keeps the current action', async () => {
+    const routines: Routine[] = [{
+      id: 'routine-1',
+      name: 'Morning briefing',
+      prompt: 'Morning summary',
+      schedule: { kind: 'daily', time: '09:00', timezone: 'UTC' },
+      target: { mode: 'create_each_run' },
+      skillId: null,
+      agentId: null,
+      enabled: true,
+      nextRunAt: Date.now() + 3600_000,
+      lastRun: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }];
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      if (url === '/api/routines' && (!init || init.method === undefined)) {
+        return new Response(JSON.stringify({ routines }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url === '/api/projects' && (!init || init.method === undefined)) {
+        return new Response(JSON.stringify({ projects: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url === '/api/routines/routine-1' && init?.method === 'PATCH') {
+        return new Response(JSON.stringify({ error: 'scheduler unavailable' }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    }) as typeof fetch;
+
+    render(<RoutinesSection />);
+
+    const row = await screen.findByText('Morning briefing');
+    const card = row.closest('li')!;
+    fireEvent.click(within(card).getByRole('button', { name: 'Pause' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('scheduler unavailable');
+    expect(within(card).getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(within(card).queryByRole('button', { name: 'Resume' })).toBeNull();
+  });
+
   it('shows an error alert when deleting a routine fails', async () => {
     const routines: Routine[] = [{
       id: 'routine-1',
