@@ -32,6 +32,18 @@ const healthExpression = `
     };
   })()
 `;
+const orbitTemplatesExpression = `
+  (async () => {
+    const response = await fetch('/api/design-templates');
+    const json = await response.json();
+    return {
+      status: response.status,
+      templateIds: Array.isArray(json?.skills)
+        ? json.skills.map((entry) => entry?.id).filter((id) => typeof id === 'string')
+        : [],
+    };
+  })()
+`;
 
 type DesktopStatus = {
   state?: string;
@@ -99,6 +111,11 @@ type HealthEvalValue = {
   title: string;
 };
 
+type OrbitTemplatesEvalValue = {
+  status: number;
+  templateIds: string[];
+};
+
 const shouldRunPackagedMacSmoke = process.platform === 'darwin' && process.env.OD_PACKAGED_E2E_MAC === '1';
 const macDescribe = shouldRunPackagedMacSmoke ? describe : describe.skip;
 const shouldRunDesktopMacSmoke = process.platform === 'darwin' && process.env.OD_DESKTOP_SMOKE === '1';
@@ -146,6 +163,11 @@ macDescribe('packaged mac runtime smoke', () => {
       expect(value.status).toBe(200);
       expect(value.health.ok).toBe(true);
       expect(value.health.version).toEqual(expect.any(String));
+
+      const orbitTemplates = await runToolsPackJson<MacInspectResult>('inspect', ['--expr', orbitTemplatesExpression]);
+      const orbitTemplatesValue = assertOrbitTemplatesEvalValue(orbitTemplates.eval?.value);
+      expect(orbitTemplatesValue.status).toBe(200);
+      expect(orbitTemplatesValue.templateIds).toContain('orbit-general');
 
       await mkdir(dirname(screenshotPath), { recursive: true });
       const screenshot = await runToolsPackJson<MacInspectResult>('inspect', ['--path', screenshotPath]);
@@ -1512,6 +1534,20 @@ function assertHealthEvalValue(value: unknown): HealthEvalValue {
     throw new Error(`unexpected health eval value: ${formatUnknown(value)}`);
   }
   return normalized;
+}
+
+function assertOrbitTemplatesEvalValue(value: unknown): OrbitTemplatesEvalValue {
+  if (
+    typeof value !== 'object'
+    || value == null
+    || !('status' in value)
+    || !('templateIds' in value)
+    || typeof (value as { status?: unknown }).status !== 'number'
+    || !Array.isArray((value as { templateIds?: unknown }).templateIds)
+  ) {
+    throw new Error(`unexpected orbit templates eval value: ${formatUnknown(value)}`);
+  }
+  return value as OrbitTemplatesEvalValue;
 }
 
 function asHealthEvalValue(value: unknown): HealthEvalValue | null {
