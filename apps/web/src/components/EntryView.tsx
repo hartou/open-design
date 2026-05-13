@@ -40,6 +40,7 @@ import { PromptTemplatePreviewModal } from './PromptTemplatePreviewModal';
 import { PromptTemplatesTab } from './PromptTemplatesTab';
 import { apiProtocolLabel } from '../utils/apiProtocol';
 import { AppChromeHeader, SettingsIconButton } from './AppChromeHeader';
+import { ClerkUserButton } from './AuthGate';
 
 type TopTab = 'designs' | 'templates' | 'design-systems' | 'image-templates' | 'video-templates';
 
@@ -478,11 +479,14 @@ export function EntryView({
     <div className="entry-shell">
       <AppChromeHeader
         actions={(
-          <SettingsIconButton
-            onClick={() => onOpenSettings()}
-            title={t('settings.title')}
-            ariaLabel={t('settings.title')}
-          />
+          <>
+            <SettingsIconButton
+              onClick={() => onOpenSettings()}
+              title={t('settings.title')}
+              ariaLabel={t('settings.title')}
+            />
+            <ClerkUserButton />
+          </>
         )}
       />
       <div

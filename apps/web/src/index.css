@@ -415,6 +415,10 @@ code {
   gap: 6px;
   flex-shrink: 0;
 }
+.app-chrome-actions .cl-userButtonTrigger {
+  height: 28px;
+  width: 28px;
+}
 .app-chrome-file-actions {
   display: inline-flex;
   align-items: center;

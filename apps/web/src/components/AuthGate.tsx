@@ -33,9 +33,6 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
     <>
       <SignedIn>
         <TokenBridge>
-          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 9999 }}>
-            <UserButton />
-          </div>
           {children}
         </TokenBridge>
       </SignedIn>
@@ -46,6 +43,15 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
       </SignedOut>
     </>
   );
+}
+
+/**
+ * Inline Clerk user button for the app header.
+ * Renders the Clerk UserButton when in SaaS mode, nothing otherwise.
+ */
+export function ClerkUserButton() {
+  if (!CLERK_KEY) return null;
+  return <UserButton />;
 }
 
 export function AuthGate({ children }: { children: ReactNode }) {
