@@ -4811,6 +4811,12 @@ function HtmlViewer({
     setZoom((z) => Math.max(25, Math.min(200, z + delta)));
   }
 
+  function activateBoard(nextTool?: BoardTool) {
+    setMode('preview');
+    setBoardMode(true);
+    if (nextTool) setBoardTool(nextTool);
+  }
+
   function clearBoardComposer() {
     setActiveCommentTarget(null);
     setHoveredCommentTarget(null);
@@ -5069,6 +5075,78 @@ function HtmlViewer({
               onClose={() => setPalettePopoverOpen(false)}
             />
           </div>
+          <button
+            type="button"
+            className={`viewer-action viewer-comment-toggle${boardMode ? ' active' : ''}`}
+            data-testid="board-mode-toggle"
+            title={t('fileViewer.comment')}
+            aria-pressed={boardMode}
+            onClick={() => {
+              if (boardMode) {
+                setBoardMode(false);
+                clearBoardComposer();
+                return;
+              }
+              setManualEditMode(false);
+              setInspectMode(false);
+              setDrawOverlayOpen(false);
+              activateBoard(boardTool);
+            }}
+          >
+            <Icon name="comment" size={13} />
+            <span>{t('fileViewer.comment')}</span>
+          </button>
+          {boardMode ? (
+            <>
+              <button
+                className={`viewer-action${boardTool === 'inspect' ? ' active' : ''}`}
+                type="button"
+                data-testid="comment-mode-toggle"
+                title="Pick one element"
+                aria-label="Picker"
+                aria-pressed={boardTool === 'inspect'}
+                onClick={() => activateBoard('inspect')}
+              >
+                <Icon name="edit" size={13} />
+                <span>Picker</span>
+              </button>
+              <button
+                className={`viewer-action${boardTool === 'pod' ? ' active' : ''}`}
+                type="button"
+                title="Draw a pod selection"
+                aria-label="Pods"
+                aria-pressed={boardTool === 'pod'}
+                onClick={() => activateBoard('pod')}
+              >
+                <Icon name="draw" size={13} />
+                <span>Pods</span>
+              </button>
+            </>
+          ) : null}
+          <button
+            className={`viewer-action${inspectMode ? ' active' : ''}`}
+            type="button"
+            data-testid="inspect-mode-toggle"
+            title="Inspect"
+            aria-pressed={inspectMode}
+            onClick={() => {
+              setInspectMode((v) => {
+                const next = !v;
+                if (next) {
+                  setBoardMode(false);
+                  clearBoardComposer();
+                  setManualEditMode(false);
+                  setDrawOverlayOpen(false);
+                  setOpenHintBox(true);
+                  setMode('preview');
+                }
+                return next;
+              });
+            }}
+          >
+            <Icon name="tweaks" size={13} />
+            <span>Inspect</span>
+          </button>
           <button
             className={`viewer-action${manualEditMode ? ' active' : ''}`}
             type="button"
