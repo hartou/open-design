@@ -57,7 +57,7 @@ export const DEFAULT_ORBIT: OrbitConfig = {
 };
 
 export const DEFAULT_CONFIG: AppConfig = {
-  mode: 'daemon',
+  mode: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? 'api' : 'daemon',
   apiKey: '',
   baseUrl: 'https://api.anthropic.com',
   model: 'claude-sonnet-4-5',

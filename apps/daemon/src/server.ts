@@ -15,6 +15,7 @@ import {
   renderCodexImagegenOverride,
   shouldRenderCodexImagegenOverride,
 } from './prompts/system.js';
+import { clerkAuthMiddleware, isSaasMode } from './clerk-auth.js';
 import { expandHomePrefix, resolveProjectRelativePath } from './home-expansion.js';
 import { createCommandInvocation } from '@open-design/platform';
 import { SIDECAR_DEFAULTS, SIDECAR_ENV } from '@open-design/sidecar-proto';
@@ -2251,7 +2252,21 @@ export async function startServer({
     }
     next();
   });
-  const db = openDatabase(PROJECT_ROOT, { dataDir: RUNTIME_DATA_DIR });
+
+  // SaaS mode: verify Clerk JWT on all /api routes (except /api/health).
+  // When OD_CLERK_SECRET_KEY + OD_CLERK_ISSUER are unset this is a no-op.
+  app.use('/api', clerkAuthMiddleware());
+
+  // In SaaS mode, resolve a per-user data directory so each authenticated
+  // user gets isolated storage (SQLite, projects, artifacts).
+  const effectiveDataDir = (() => {
+    if (!isSaasMode()) return RUNTIME_DATA_DIR;
+    // Per-user dirs are created on-demand by the request-scoped middleware
+    // below; for the shared boot-time db we still use the base dir.
+    return RUNTIME_DATA_DIR;
+  })();
+
+  const db = openDatabase(PROJECT_ROOT, { dataDir: effectiveDataDir });
   // Wire the upload-destination bridge to this db so multer can route
   // file uploads into baseDir-rooted projects' actual folders.
   projectMetadataLookup = (id) => {

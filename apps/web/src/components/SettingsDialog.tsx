@@ -1690,6 +1690,9 @@ export function SettingsDialog({
           <div className="settings-content" ref={settingsContentRef}>
           {activeSection === 'execution' ? (
             <>
+              {/* In SaaS mode (Clerk auth), hide the Local CLI / BYOK toggle
+                  and force BYOK-only mode since there is no local CLI. */}
+              {!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
               <div
                 className="seg-control"
                 role="tablist"
@@ -1727,7 +1730,8 @@ export function SettingsDialog({
                   <span className="seg-meta">{t('settings.modeApi')}</span>
                 </button>
               </div>
-              {cfg.mode === 'api' ? (
+              ) : null}
+              {(cfg.mode === 'api' || !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) ? (
                 <div
                   className="protocol-chips"
                   role="tablist"
@@ -1757,7 +1761,7 @@ export function SettingsDialog({
                   ))}
                 </div>
               ) : null}
-          {cfg.mode === 'daemon' ? (
+          {(cfg.mode === 'daemon' && !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) ? (
             <section className="settings-section">
               <div className="section-head">
                 <div>

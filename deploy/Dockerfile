@@ -33,6 +33,10 @@ RUN corepack enable && \
     pnpm install --frozen-lockfile
 
 COPY apps ./apps
+# Clerk publishable key must be available at Next.js build time for
+# NEXT_PUBLIC_* inlining into the static export.
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 RUN pnpm --filter @open-design/daemon build && \
     pnpm --filter @open-design/web build && \
     pnpm --filter @open-design/daemon deploy --legacy --prod /app/deploy/daemon && \
