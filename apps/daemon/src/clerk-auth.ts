@@ -18,6 +18,8 @@ declare global {
   namespace Express {
     interface Request {
       userId?: string;
+      userDb?: import('better-sqlite3').Database;
+      userDataDir?: string;
     }
   }
 }

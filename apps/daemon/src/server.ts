@@ -16,6 +16,16 @@ import {
   shouldRenderCodexImagegenOverride,
 } from './prompts/system.js';
 import { clerkAuthMiddleware, isSaasMode } from './clerk-auth.js';
+import { getUserDb, closeAllUserDbs, awaitHydration } from './user-db-pool.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import {
+  initCosmos,
+  isCosmosConfigured,
+  registerUserDbGetter,
+  markDirty,
+  startSyncLoop,
+  stopSync,
+} from './cosmos-sync.js';
 import { expandHomePrefix, resolveProjectRelativePath } from './home-expansion.js';
 import { createCommandInvocation } from '@open-design/platform';
 import { SIDECAR_DEFAULTS, SIDECAR_ENV } from '@open-design/sidecar-proto';
@@ -2257,16 +2267,60 @@ export async function startServer({
   // When OD_CLERK_SECRET_KEY + OD_CLERK_ISSUER are unset this is a no-op.
   app.use('/api', clerkAuthMiddleware());
 
-  // In SaaS mode, resolve a per-user data directory so each authenticated
-  // user gets isolated storage (SQLite, projects, artifacts).
-  const effectiveDataDir = (() => {
-    if (!isSaasMode()) return RUNTIME_DATA_DIR;
-    // Per-user dirs are created on-demand by the request-scoped middleware
-    // below; for the shared boot-time db we still use the base dir.
-    return RUNTIME_DATA_DIR;
-  })();
+  // --------------- Per-user database routing (SaaS + Cosmos) ---------------
+  // When SaaS mode is active, each authenticated user gets their own SQLite
+  // file. An AsyncLocalStorage context makes the shared `db` variable
+  // transparently resolve to the per-user database during request handling,
+  // so route handlers need zero changes.
+  const requestDbStore = new AsyncLocalStorage();
 
-  const db = openDatabase(PROJECT_ROOT, { dataDir: effectiveDataDir });
+  // Initialize Cosmos DB sync layer if configured.
+  if (isCosmosConfigured()) {
+    await initCosmos();
+    registerUserDbGetter((userId) => getUserDb(RUNTIME_DATA_DIR, userId));
+    startSyncLoop(30_000);
+  }
+
+  if (isSaasMode()) {
+    app.use('/api', async (req, _res, next) => {
+      if (req.userId) {
+        const user = getUserDb(RUNTIME_DATA_DIR, req.userId);
+        (req as any).userDb = user.db;
+        (req as any).userDataDir = user.dataDir;
+        // Wait for Cosmos hydration on first access, then run the rest
+        // of the middleware chain inside an AsyncLocalStorage context
+        // so `db` (Proxy) resolves to the per-user SQLite.
+        await awaitHydration(req.userId);
+        requestDbStore.run(user.db, next);
+        return;
+      }
+      next();
+    });
+    // After mutating requests, mark the user dirty for Cosmos sync.
+    if (isCosmosConfigured()) {
+      app.use('/api', (_req, res, next) => {
+        const req = _req;
+        res.on('finish', () => {
+          if (req.userId && req.method !== 'GET' && req.method !== 'HEAD' && res.statusCode < 400) {
+            markDirty(req.userId);
+          }
+        });
+        next();
+      });
+    }
+  }
+
+  // Open the shared database. In SaaS mode this is only used for boot-time
+  // setup; request-time calls go through the per-user db via the Proxy.
+  const sharedDb = openDatabase(PROJECT_ROOT, { dataDir: RUNTIME_DATA_DIR });
+  const db = isSaasMode()
+    ? new Proxy(sharedDb, {
+        get(target, prop) {
+          const requestDb = requestDbStore.getStore();
+          return Reflect.get(requestDb || target, prop);
+        },
+      })
+    : sharedDb;
   // Wire the upload-destination bridge to this db so multer can route
   // file uploads into baseDir-rooted projects' actual folders.
   projectMetadataLookup = (id) => {
@@ -4943,7 +4997,9 @@ export async function startServer({
       return;
     }
     server.once('close', () => {
-      void shutdownDaemonRuns().finally(cleanupDaemonBackgroundWork);
+      void shutdownDaemonRuns()
+        .then(() => stopSync())
+        .finally(cleanupDaemonBackgroundWork);
     });
     // `app.listen` throws synchronously when the port is already in use on
     // some Node versions, but emits an `error` event on others (and for
