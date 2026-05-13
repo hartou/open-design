@@ -4825,12 +4825,6 @@ function HtmlViewer({
     setStrokePoints([]);
   }
 
-  function activateBoard(tool: BoardTool) {
-    setBoardTool(tool);
-    setDrawOverlayOpen(false);
-    setBoardMode(true);
-  }
-
   function queueCurrentDraft() {
     const note = commentDraft.trim();
     if (!note) return;
