@@ -232,6 +232,69 @@ test.describe('Settings Memory and Routines flows', () => {
     await expect(reopened.locator('.memory-disabled-banner')).toBeVisible();
   });
 
+  test('keeps the memory editor open when creating a memory entry fails', async ({ page }) => {
+    await seedSettingsBase(page);
+
+    await page.route('**/api/memory', async (route) => {
+      const method = route.request().method();
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            enabled: true,
+            rootDir: '/tmp/memory',
+            index: '# Memory\n',
+            entries: [],
+            extraction: null,
+          }),
+        });
+        return;
+      }
+      if (method === 'POST') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'provider unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404, body: '{}' });
+    });
+
+    await page.route('**/api/memory/extractions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ extractions: [] }),
+      });
+    });
+
+    await page.route('**/api/memory/events', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: '',
+      });
+    });
+
+    const dialog = await openMemorySettings(page);
+
+    await dialog.getByRole('button', { name: 'New memory' }).click();
+    await dialog.getByPlaceholder('e.g. UI preferences').fill('UI preferences');
+    await dialog.getByPlaceholder('One sentence — what is this memory about?').fill(
+      'Persistent rendering preferences',
+    );
+    await dialog
+      .getByPlaceholder(/- Rule one[\s\S]*When to apply: optional scope/)
+      .fill('- Prefer dark mode');
+    await dialog.getByRole('button', { name: 'Create' }).click();
+
+    await expect(dialog.getByPlaceholder('e.g. UI preferences')).toHaveValue('UI preferences');
+    await expect(dialog.locator('.memory-flash-pill')).toHaveCount(0);
+    await expect(dialog.getByText('No memory yet.')).toBeVisible();
+  });
+
   test('creates a routine and loads its history after Run now', async ({ page }) => {
     await seedSettingsBase(page);
 
@@ -349,5 +412,55 @@ test.describe('Settings Memory and Routines flows', () => {
     await expect(row.getByRole('button', { name: 'Hide history' })).toBeVisible();
     await expect(dialog.getByText('manual')).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Open project' })).toBeVisible();
+  });
+
+  test('falls back to the empty history state when loading routine history fails', async ({ page }) => {
+    await seedSettingsBase(page);
+
+    const projects = [{ id: 'proj-1', name: 'Routine Test Project' }];
+    const routines = [
+      {
+        id: 'routine-1',
+        name: 'Weekly digest',
+        prompt: 'Summarize GitHub and design activity.',
+        schedule: { kind: 'weekly', weekday: 3, time: '09:00', timezone: 'UTC' },
+        target: { mode: 'reuse', projectId: 'proj-1' },
+        enabled: true,
+        nextRunAt: Date.now() + 3600_000,
+        lastRun: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    ];
+
+    await page.route('**/api/projects', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ projects }),
+      });
+    });
+
+    await page.route('**/api/routines', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ routines }),
+      });
+    });
+
+    await page.route('**/api/routines/routine-1/runs?limit=10', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'history unavailable' }),
+      });
+    });
+
+    const dialog = await openRoutinesSettings(page);
+    const row = dialog.locator('.routines-item', { hasText: 'Weekly digest' }).first();
+    await expect(row).toBeVisible();
+    await row.getByRole('button', { name: 'History' }).click();
+    await expect(dialog.getByText('No runs yet.')).toBeVisible();
   });
 });

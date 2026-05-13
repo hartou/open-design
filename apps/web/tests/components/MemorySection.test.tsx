@@ -731,4 +731,76 @@ describe('MemorySection', () => {
     expect(screen.getByText('provider returned 429 quota exceeded')).toBeTruthy();
     expect(screen.getByText('Failed')).toBeTruthy();
   });
+
+  it('renders the disabled banner when memory starts disabled', async () => {
+    globalThis.EventSource = StubEventSource as unknown as typeof EventSource;
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = input.toString();
+      if (url === '/api/memory') {
+        return new Response(JSON.stringify({
+          enabled: false,
+          rootDir: '/tmp/memory',
+          index: '# Memory\n',
+          entries: [],
+          extraction: null,
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (url === '/api/memory/extractions') {
+        return new Response(JSON.stringify({ extractions: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    }) as typeof fetch;
+
+    renderMemorySection();
+
+    const banner = await screen.findByRole('status');
+    expect(banner.textContent).toContain('Memory is currently OFF.');
+  });
+
+  it('toggles memory injection off and persists the PATCH payload', async () => {
+    globalThis.EventSource = StubEventSource as unknown as typeof EventSource;
+    const patchBodies: unknown[] = [];
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      if (url === '/api/memory' && (!init || init.method === undefined)) {
+        return new Response(JSON.stringify({
+          enabled: true,
+          rootDir: '/tmp/memory',
+          index: '# Memory\n',
+          entries: [],
+          extraction: null,
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (url === '/api/memory/extractions') {
+        return new Response(JSON.stringify({ extractions: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url === '/api/memory/config' && init?.method === 'PATCH') {
+        patchBodies.push(JSON.parse(String(init.body)));
+        return new Response(JSON.stringify({ enabled: false, extraction: null }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    }) as typeof fetch;
+
+    renderMemorySection();
+
+    const toggle = await screen.findByRole('checkbox', { name: 'Enable memory injection' }) as HTMLInputElement;
+
+    fireEvent.click(toggle);
+
+    await waitFor(() => {
+      expect(screen.getByRole('status').textContent).toContain('Memory is currently OFF.');
+    });
+    expect(patchBodies).toEqual([{ enabled: false }]);
+  });
 });
