@@ -125,6 +125,88 @@ test('manual edit inspector previews and persists page and selected element styl
   await expect(page.getByRole('menuitem', { name: /Export as PDF/ })).toBeVisible();
 });
 
+test('manual edit mode applies content, style, attribute, HTML, and source patches', async ({ page }) => {
+  await routeMockAgents(page);
+  const projectId = await createEmptyProject(page, 'Manual edit smoke');
+  await seedHtmlArtifact(page, projectId, 'manual-edit.html', manualEditHtml());
+  await page.goto(`/projects/${projectId}/files/manual-edit.html`);
+  await openDesignFile(page, 'manual-edit.html');
+
+  await expect(page.getByTestId('artifact-preview-frame')).toBeVisible();
+  const frame = page.frameLocator('[data-testid="artifact-preview-frame"]');
+  await expect(frame.getByRole('heading', { name: 'Original Hero' })).toBeVisible();
+
+  await page.getByTestId('manual-edit-mode-toggle').click();
+  await selectManualEditTarget(page, frame, '[data-od-id="hero-title"]');
+  await page.locator('.manual-edit-tabs').getByRole('tab', { name: 'Content', exact: true }).click();
+  await page.locator('.manual-edit-field textarea').first().fill('Edited Hero');
+  await page.getByRole('button', { name: 'Apply Content' }).click();
+  await expectFileSource(page, projectId, 'manual-edit.html', ['Edited Hero']);
+
+  await selectManualEditTarget(page, frame, '[data-od-id="hero-title"]');
+  await page.locator('.manual-edit-tabs').getByRole('tab', { name: 'Style', exact: true }).click();
+  await page.locator('.cc-section').filter({ hasText: 'TYPOGRAPHY' }).locator('.cc-row').filter({ hasText: /^Size/ }).locator('input').fill('48px');
+  await expectFileSource(page, projectId, 'manual-edit.html', ['font-size: 48px']);
+
+  await selectManualEditTarget(page, frame, '[data-od-id="cta"]');
+  await page.locator('.manual-edit-tabs').getByRole('tab', { name: 'Content', exact: true }).click();
+  const contentFields = page.locator('.manual-edit-modal');
+  await contentFields.locator('textarea').fill('Launch now');
+  await contentFields.locator('input').fill('/launch');
+  await page.getByRole('button', { name: 'Apply Content' }).click();
+  await expectFileSource(page, projectId, 'manual-edit.html', ['Launch now', 'href="/launch"']);
+
+  await selectManualEditTarget(page, frame, '[data-od-id="hero-image"]');
+  await page.locator('.manual-edit-tabs').getByRole('tab', { name: 'Content', exact: true }).click();
+  await contentFields.locator('input').first().fill('/edited.png');
+  await contentFields.locator('input').nth(1).fill('Edited alt');
+  await page.getByRole('button', { name: 'Apply Content' }).click();
+  await expectFileSource(page, projectId, 'manual-edit.html', ['/edited.png', 'Edited alt']);
+
+  await selectManualEditTarget(page, frame, '[data-od-id="hero-title"]');
+  await page.locator('.manual-edit-tabs').getByRole('tab', { name: 'Attributes', exact: true }).click();
+  await page.locator('.manual-edit-field textarea').fill('{"aria-label":"Edited headline"}');
+  await page.getByRole('button', { name: 'Apply Attributes' }).click();
+  await expectFileSource(page, projectId, 'manual-edit.html', ['aria-label="Edited headline"', 'font-size: 48px']);
+
+  await selectManualEditTarget(page, frame, '[data-od-id="hero-title"]');
+  await page.locator('.manual-edit-tabs').getByRole('tab', { name: 'Html', exact: true }).click();
+  await page.locator('.manual-edit-field textarea').fill('<h1 class="replacement">HTML Hero</h1>');
+  await page.getByRole('button', { name: 'Apply HTML' }).click();
+  await expectFileSource(page, projectId, 'manual-edit.html', ['data-od-id="hero-title"', 'HTML Hero']);
+
+  await selectManualEditTarget(page, frame, '[data-od-id="hero-title"]');
+  await page.locator('.manual-edit-tabs').getByRole('tab', { name: 'Source', exact: true }).click();
+  await page.locator('.manual-edit-field textarea').fill(manualEditHtml().replace('Original Hero', 'Full Source Hero'));
+  await page.getByRole('button', { name: 'Apply Source' }).click();
+  await expectFileSource(page, projectId, 'manual-edit.html', ['Full Source Hero']);
+
+  await page.getByTestId('manual-edit-mode-toggle').click();
+  await expect(frame.getByRole('heading', { name: 'Full Source Hero' })).toBeVisible();
+
+  await page.getByTestId('board-mode-toggle').click();
+  await expect(page.getByTestId('comment-mode-toggle')).toBeVisible();
+  await frame.getByRole('heading', { name: 'Full Source Hero' }).click();
+  await expect(page.getByTestId('comment-popover')).toBeVisible();
+
+  await page.getByRole('button', { name: /^Share$/ }).click();
+  await expect(page.getByRole('menuitem', { name: /Export as PDF/ })).toBeVisible();
+});
+
+async function selectManualEditTarget(
+  page: Page,
+  frame: ReturnType<Page['frameLocator']>,
+  selector: string,
+) {
+  await frame.locator(selector).click();
+  await expect(page.locator('.manual-edit-modal')).toContainText('TYPOGRAPHY');
+  const styleTab = page.locator('.manual-edit-tabs').getByRole('tab', { name: 'Style', exact: true });
+  if (!(await styleTab.isVisible().catch(() => false))) {
+    await page.getByRole('button', { name: /Advanced/ }).click();
+  }
+  await expect(styleTab).toBeVisible();
+}
+
 test('manual edit mode keeps deck navigation available for deck-shaped HTML', async ({ page }) => {
   await routeMockAgents(page);
   const projectId = await createEmptyProject(page, 'Manual edit deck smoke');
