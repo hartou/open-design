@@ -23,6 +23,7 @@ const dataDir = process.env.OD_DATA_DIR as string;
 
 let baseUrl: string;
 let server: http.Server;
+const originalFetch = globalThis.fetch;
 
 interface SseEvent {
   event: string;
@@ -41,9 +42,29 @@ beforeAll(async () => {
   })) as StartedServer;
   baseUrl = started.url;
   server = started.server;
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string'
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+    if (url.startsWith(baseUrl)) return originalFetch(input, init);
+    return new Response(
+      JSON.stringify({
+        choices: [{ message: { content: '[]' } }],
+      }),
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      },
+    );
+  };
 });
 
-afterAll(() => closeServer(server));
+afterAll(async () => {
+  globalThis.fetch = originalFetch;
+  await closeServer(server);
+});
 
 beforeEach(async () => {
   await fsp.rm(memoryDir(dataDir), { recursive: true, force: true });
@@ -78,6 +99,18 @@ async function readNextSseEvent(
       throw new Error('memory SSE stream ended before the next event arrived');
     }
     state.buffer += decoder.decode(chunk.value, { stream: true });
+  }
+}
+
+async function readSseEventByType(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  decoder: InstanceType<typeof TextDecoder>,
+  state: { buffer: string },
+  eventType: string,
+): Promise<SseEvent> {
+  while (true) {
+    const event = await readNextSseEvent(reader, decoder, state);
+    if (event.event === eventType) return event;
   }
 }
 
@@ -280,7 +313,7 @@ describe('memory routes', () => {
     ]);
   });
 
-  it('reports attemptedLLM for post-turn extraction requests without blocking on synchronous changes', async () => {
+  it('reports attemptedLLM for post-turn extraction requests without triggering a real provider call', async () => {
     const res = await fetch(`${baseUrl}/api/memory/extract`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -359,7 +392,7 @@ describe('memory routes', () => {
       });
       expect(createRes.status).toBe(200);
 
-      const change = await readNextSseEvent(reader, decoder, state);
+      const change = await readSseEventByType(reader, decoder, state, 'change');
       expect(change.event).toBe('change');
       expect(change.data).toMatchObject({
         kind: 'upsert',
