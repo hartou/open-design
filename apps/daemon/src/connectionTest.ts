@@ -276,12 +276,11 @@ function inspectProviderCompletion(
     };
   }
 
-  if (protocol === 'ollama') {
-    const msg = (obj as { message?: { content?: unknown } }).message;
-    const hasContent = typeof msg?.content === 'string';
+  if (protocol === 'foundry') {
+    // Foundry uses the same OpenAI-compatible response shape
     return {
-      valid: Array.isArray((obj as { messages?: unknown }).messages) || hasContent,
-      ...(hasContent ? { sample: truncateSample(msg?.content) } : {}),
+      valid: Array.isArray((obj as { choices?: unknown }).choices),
+      sample: extractOpenAIMessageText(obj),
     };
   }
 
@@ -511,26 +510,19 @@ function buildProviderCall(input: ProviderTestRequest): ProviderCallShape {
         },
       };
     }
-    case 'ollama': {
-      const trimmedBase = baseUrl.replace(/\/+$/, '').replace(/\/api\/?$/, '');
+    case 'foundry': {
+      const trimmedBase = baseUrl.replace(/\/+$/, '');
       return {
-        url: `${trimmedBase}/api/chat`,
+        url: `${trimmedBase}/openai/deployments/${encodeURIComponent(model)}/chat/completions?api-version=2024-10-21`,
         headers: {
           'content-type': 'application/json',
-          authorization: `Bearer ${apiKey}`,
+          'api-key': apiKey,
         },
         body: {
-          model,
           messages: [{ role: 'user', content: SMOKE_PROMPT }],
           stream: false,
         },
-        extractText: (data) => {
-          const message = (data as { message?: { content?: unknown } }).message;
-          if (message && typeof (message as { content?: unknown }).content === 'string') {
-            return (message as { content: string }).content;
-          }
-          return '';
-        },
+        extractText: (data) => extractOpenAIMessageText(data),
       };
     }
     default:

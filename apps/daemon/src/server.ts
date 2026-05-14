@@ -262,6 +262,7 @@ import { registerMediaRoutes } from './media-routes.js';
 import { registerProjectRoutes, registerProjectArtifactRoutes, registerProjectFileRoutes, registerProjectUploadRoutes } from './project-routes.js';
 import { registerFinalizeRoutes, registerImportRoutes, registerProjectExportRoutes } from './import-export-routes.js';
 import { registerChatRoutes } from './chat-routes.js';
+import { initFoundry, registerFoundryRoutes } from './foundry-proxy.js';
 import { registerStaticResourceRoutes } from './static-resource-routes.js';
 import { registerRoutineRoutes, routineDbRowToContract } from './routine-routes.js';
 import { assertServerContextSatisfiesRoutes } from './route-context-contract.js';
@@ -2281,6 +2282,9 @@ export async function startServer({
     startSyncLoop(30_000);
   }
 
+  // Initialize Azure AI Foundry deployment discovery.
+  await initFoundry();
+
   if (isSaasMode()) {
     app.use('/api', async (req, _res, next) => {
       if (req.userId) {
@@ -2653,7 +2657,7 @@ export async function startServer({
           || provider === 'openai'
           || provider === 'azure'
           || provider === 'google'
-          || provider === 'ollama'
+          || provider === 'foundry'
         ) {
           chatProvider = {
             provider,
@@ -4939,6 +4943,8 @@ export async function startServer({
     lifecycle: { isDaemonShuttingDown: () => daemonShuttingDown },
 
   });
+
+  registerFoundryRoutes(app);
 
   // Wait for `listen` to bind so callers always see the resolved URL —
   // critical when port=0 (ephemeral port) and when the embedding sidecar

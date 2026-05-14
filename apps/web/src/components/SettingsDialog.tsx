@@ -261,7 +261,7 @@ export function canFetchProviderModels(
 ): boolean {
   return (
     protocol !== 'azure' &&
-    protocol !== 'ollama' &&
+    protocol !== 'foundry' &&
     Boolean(config.apiKey.trim()) &&
     Boolean(config.baseUrl.trim()) &&
     isValidApiBaseUrl(config.baseUrl)
@@ -2178,6 +2178,41 @@ export function SettingsDialog({
                 </div>
               </div>
             </section>
+          ) : apiProtocol === 'foundry' ? (
+            <section className="settings-section">
+              <div className="section-head">
+                <div>
+                  <h3>{API_PROTOCOL_LABELS[apiProtocol]}</h3>
+                  <p className="hint">
+                    Managed AI models — select a model to get started. No API key needed.
+                  </p>
+                </div>
+              </div>
+              <label className="field">
+                <span className="field-label">
+                  {t('settings.model')}
+                </span>
+                <select
+                  value={apiModelSelectValue}
+                  onChange={(e) => {
+                    setApiModelCustomEditing(false);
+                    updateApiConfig({ model: e.target.value });
+                  }}
+                >
+                  {apiModelOptions.map((m) => (
+                    <option value={m.id} key={m.id}>{apiModelOptionLabel(m)}</option>
+                  ))}
+                </select>
+              </label>
+              <MemoryModelInline
+                mode="api"
+                apiProtocol={apiProtocol}
+                chatApiKey={cfg.apiKey}
+                chatBaseUrl={cfg.baseUrl}
+                chatApiVersion={cfg.apiVersion ?? ''}
+                chatModel={cfg.model}
+              />
+            </section>
           ) : (
             <section className="settings-section">
               <div className="section-head">
@@ -2395,9 +2430,6 @@ export function SettingsDialog({
               ) : null}
               {apiProtocol === 'azure' ? (
                 <p className="hint">{t('settings.azureModelFetchHint')}</p>
-              ) : null}
-              {apiProtocol === 'ollama' ? (
-                <p className="hint">{t('settings.fetchModelsUnsupported')}</p>
               ) : null}
               {apiModelCustomActive ? (
                 <label className="field">

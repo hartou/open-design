@@ -61,14 +61,14 @@ export interface MemoryListResponse {
  *  (openai-compatible at a different URL/header) + google gemini +
  *  ollama (also openai-compatible, just hosted on Ollama Cloud) — so
  *  the memory picker can offer the same options as the chat picker
- *  above it. The daemon routes ollama through the same callOpenAI
+ *  above it. The daemon routes foundry through the same callOpenAI
  *  path since the wire protocol is identical. */
 export type MemoryExtractionProvider =
   | 'anthropic'
   | 'openai'
   | 'azure'
   | 'google'
-  | 'ollama';
+  | 'foundry';
 
 /** Masked version of MemoryExtractionConfig returned by GET endpoints —
  *  the api key field is replaced with a 4-char tail so the settings UI

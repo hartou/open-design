@@ -65,46 +65,12 @@ export const SUGGESTED_MODELS_BY_PROTOCOL: Record<ApiProtocol, readonly string[]
     'gemini-1.5-pro',
     'gemini-1.5-flash',
   ],
-  ollama: [
-    'cogito-2.1:671b',
-    'deepseek-v3.1:671b',
-    'deepseek-v3.2',
-    'deepseek-v4-flash',
-    'deepseek-v4-pro',
-    'devstral-2:123b',
-    'devstral-small-2:24b',
-    'gemini-3-flash-preview',
-    'gemma3:4b',
-    'gemma3:12b',
-    'gemma3:27b',
-    'gemma4:31b',
-    'glm-4.6',
-    'glm-4.7',
-    'glm-5',
-    'glm-5.1',
-    'gpt-oss:20b',
-    'gpt-oss:120b',
-    'kimi-k2:1t',
-    'kimi-k2-thinking',
-    'kimi-k2.5',
-    'kimi-k2.6',
-    'minimax-m2',
-    'minimax-m2.1',
-    'minimax-m2.5',
-    'minimax-m2.7',
-    'ministral-3:3b',
-    'ministral-3:8b',
-    'ministral-3:14b',
-    'mistral-large-3:675b',
-    'nemotron-3-nano:30b',
-    'nemotron-3-super',
-    'qwen3-coder:480b',
-    'qwen3-coder-next',
-    'qwen3-next:80b',
-    'qwen3-vl:235b',
-    'qwen3-vl:235b-instruct',
-    'qwen3.5:397b',
-    'rnj-1:8b',
+  foundry: [
+    // Populated dynamically from /api/foundry/models at runtime;
+    // this static list is the fallback when the daemon is unreachable.
+    'gpt-5.4-nano',
+    'gpt-5.4-mini',
+    'claude-opus-4-6',
   ],
 };
 
@@ -117,12 +83,7 @@ export const FAST_MODEL_BY_PROTOCOL: Record<ApiProtocol, string> = {
   openai: 'gpt-4o-mini',
   azure: 'gpt-4o-mini',
   google: 'gemini-2.0-flash',
-  // Ollama Cloud doesn't have a clean "fast small model" default that
-  // works for the LLM memory extractor — the catalog skews to large
-  // open-weight checkpoints. Fall back to a small Gemma so the auto-
-  // pick produces a deterministic answer; users who care can override
-  // through the Memory model picker.
-  ollama: 'gemma3:4b',
+  foundry: 'gpt-5.4-nano',
 };
 
 export const API_PROTOCOL_TABS: ReadonlyArray<{
@@ -133,7 +94,7 @@ export const API_PROTOCOL_TABS: ReadonlyArray<{
   { id: 'openai', title: 'OpenAI' },
   { id: 'azure', title: 'Azure OpenAI' },
   { id: 'google', title: 'Google Gemini' },
-  { id: 'ollama', title: 'Ollama Cloud' },
+  { id: 'foundry', title: 'ArrowFlow Agent' },
 ];
 
 export const API_PROTOCOL_LABELS: Record<ApiProtocol, string> = {
@@ -141,7 +102,7 @@ export const API_PROTOCOL_LABELS: Record<ApiProtocol, string> = {
   openai: 'OpenAI API',
   azure: 'Azure OpenAI',
   google: 'Google Gemini',
-  ollama: 'Ollama Cloud API',
+  foundry: 'ArrowFlow Agent',
 };
 
 export const API_KEY_PLACEHOLDERS: Record<ApiProtocol, string> = {
@@ -149,7 +110,7 @@ export const API_KEY_PLACEHOLDERS: Record<ApiProtocol, string> = {
   openai: 'sk-...',
   azure: 'azure key',
   google: 'AIza...',
-  ollama: 'Ollama API key',
+  foundry: '',
 };
 
 // Default base URL the daemon assumes when the user leaves the field
@@ -160,5 +121,5 @@ export const DEFAULT_BASE_URL_BY_PROTOCOL: Record<ApiProtocol, string> = {
   openai: 'https://api.openai.com',
   azure: '',
   google: 'https://generativelanguage.googleapis.com',
-  ollama: 'https://ollama.com',
+  foundry: '',
 };

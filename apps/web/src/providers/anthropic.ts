@@ -13,7 +13,7 @@ import type { AppConfig, ChatMessage } from '../types';
 import { streamMessageAnthropicProxy } from './anthropic-compatible';
 import { streamMessageAzure } from './azure-compatible';
 import { streamMessageGoogle } from './google-compatible';
-import { streamMessageOllama } from './ollama-compatible';
+import { streamMessageFoundry } from './ollama-compatible';
 import { isOpenAICompatible, streamMessageOpenAI } from './openai-compatible';
 
 // Re-export for convenience
@@ -45,8 +45,8 @@ export async function streamMessage(
   if (cfg.apiProtocol === 'azure') {
     return streamMessageAzure(cfg, system, history, signal, handlers);
   }
-  if (cfg.apiProtocol === 'ollama') {
-    return streamMessageOllama(cfg, system, history, signal, handlers);
+  if (cfg.apiProtocol === 'foundry') {
+    return streamMessageFoundry(cfg, system, history, signal, handlers);
   }
   if (cfg.apiProtocol === 'google') {
     return streamMessageGoogle(cfg, system, history, signal, handlers);

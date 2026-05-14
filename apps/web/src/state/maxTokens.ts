@@ -73,6 +73,11 @@ const OVERRIDES: Record<string, number> = {
   'qwen3-vl:235b-instruct': 131072,
   'qwen3.5:397b': 131072,
   'rnj-1:8b': 131072,
+
+  // Azure AI Foundry deployments
+  'gpt-5.4-nano': 131072,
+  'gpt-5.4-mini': 131072,
+  'claude-opus-4-6': 200000,
 };
 
 export function modelMaxTokensDefault(model: string): number {
