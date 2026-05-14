@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
 
 /* ============================================================
-   Open Design — neutral product workspace
+   ArrowFlow Design — neutral product workspace
    ============================================================ */
 :root {
   /* Surface palette — neutral app chrome that does not bias generated artifacts.
@@ -23,7 +23,7 @@
   --text-soft: #989590;
   --text-faint: #b3b0a8;
 
-  /* Accent — Open Design action color for app chrome only. */
+  /* Accent — ArrowFlow Design action color for app chrome only. */
   --accent: #c96442;
   --accent-strong: #b45a3b;
   --accent-soft: #f5d8cb;

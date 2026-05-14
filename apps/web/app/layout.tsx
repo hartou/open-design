@@ -6,7 +6,7 @@ import { AuthGate } from '../src/components/AuthGate';
 import '../src/index.css';
 
 export const metadata: Metadata = {
-  title: 'Open Design',
+  title: 'ArrowFlow Design',
   icons: {
     icon: '/app-icon.svg',
     // Safari pinned-tab mask icon — Next.js's Metadata API doesn't have a

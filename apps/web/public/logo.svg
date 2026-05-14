@@ -1,15 +1,21 @@
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' role='img' aria-label='Open Design'>
-  <title>Open Design</title>
-  <g stroke='#1F1B16' stroke-width='3.4' stroke-linecap='square' fill='none'>
-    <path d='M10 24 L10 10 L24 10' />
-    <path d='M40 10 L54 10 L54 24' />
-    <path d='M54 40 L54 54 L40 54' />
-    <path d='M24 54 L10 54 L10 40' />
-  </g>
-  <g stroke='#C2532D' stroke-width='3' stroke-linecap='round'>
-    <line x1='32' y1='20' x2='32' y2='44' />
-    <line x1='20' y1='32' x2='44' y2='32' />
-    <line x1='23.51' y1='23.51' x2='40.49' y2='40.49' />
-    <line x1='40.49' y1='23.51' x2='23.51' y2='40.49' />
-  </g>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' role='img' aria-label='ArrowFlow Design'>
+  <title>ArrowFlow Design</title>
+  <defs>
+    <linearGradient id='af1' x1='0' y1='0' x2='64' y2='64' gradientUnits='userSpaceOnUse'>
+      <stop offset='0' stop-color='#E8365D'/>
+      <stop offset='0.5' stop-color='#D94472'/>
+      <stop offset='1' stop-color='#C94D2A'/>
+    </linearGradient>
+    <linearGradient id='af2' x1='32' y1='8' x2='56' y2='40' gradientUnits='userSpaceOnUse'>
+      <stop offset='0' stop-color='#FF6B6B'/>
+      <stop offset='1' stop-color='#E8365D'/>
+    </linearGradient>
+  </defs>
+  <path d='M8 40 L28 12 L34 12 L14 40 Z' fill='url(#af1)'/>
+  <path d='M22 40 L42 12 L48 12 L28 40 Z' fill='url(#af2)'/>
+  <circle cx='44' cy='18' r='5' fill='url(#af2)'/>
+  <circle cx='51' cy='30' r='4' fill='url(#af1)' opacity='0.8'/>
+  <circle cx='44' cy='40' r='3' fill='url(#af1)' opacity='0.6'/>
+  <path d='M44 18 L51 30' stroke='url(#af1)' stroke-width='2' stroke-linecap='round' opacity='0.7'/>
+  <path d='M51 30 L44 40' stroke='url(#af1)' stroke-width='1.5' stroke-linecap='round' opacity='0.5'/>
 </svg>

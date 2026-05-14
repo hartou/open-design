@@ -39,13 +39,13 @@ export const fa: Dict = {
   'common.daysShort': '{n}ر',
   'common.untitled': 'بدون عنوان',
 
-  'app.brand': 'Open Design',
+  'app.brand': 'ArrowFlow Design',
   'app.brandPill': 'پیش‌نمایش تحقیقاتی',
   'app.brandSubtitle': 'توسط Nexu Labs',
   'app.welcomeLoading': 'در حال بارگذاری فضای کاری…',
 
   'settings.welcomeKicker': 'خوش آمدید',
-  'settings.welcomeTitle': 'Open Design را راه‌اندازی کنید',
+  'settings.welcomeTitle': 'ArrowFlow Design را راه‌اندازی کنید',
   'settings.welcomeSubtitle':
     'نحوه اجرای تولیدات را انتخاب کنید. می‌توانید هر زمان از دکمه تنظیمات در نوار بالا این را تغییر دهید.',
   'settings.kicker': 'تنظیمات',
@@ -91,7 +91,7 @@ export const fa: Dict = {
     'اگر CLI را با npm یا Homebrew نصب کرده‌اید اما هنوز به‌صورت نصب‌نشده نمایش داده می‌شود، مطمئن شوید پوشه bin ابزار در PATHای باشد که daemon اوپن دیزاین به ارث می‌برد (در macOS ممکن است PATH ترمینال و برنامه‌های GUI متفاوت باشد). بخش "Local agent CLI and PATH" در QUICKSTART.md را ببینید.',
   'settings.agentInstall.stepOpenLinks': 'برای عامل موردنظر، لینک نصب یا مستندات را باز کنید.',
   'settings.agentInstall.stepAuth':
-    'قبل از بازگشت به Open Design، در CLI ارائه‌دهنده احراز هویت کنید (ورود یا افزودن اطلاعات API).',
+    'قبل از بازگشت به ArrowFlow Design، در CLI ارائه‌دهنده احراز هویت کنید (ورود یا افزودن اطلاعات API).',
   'settings.agentInstall.stepRescan': 'در این بخش روی اسکن مجدد کلیک کنید.',
   'settings.agentInstall.stepSelect': 'وقتی عامل به‌صورت نصب‌شده نمایش داده شد، کارت آن را انتخاب کنید.',
   'settings.noAgentsDetected':
@@ -153,7 +153,7 @@ export const fa: Dict = {
   'settings.mediaProvidersHint':
     'کلیدهای API برای تولید تصویر، ویدئو و صدا. به صورت محلی ذخیره و با daemon محلی همگام می‌شود.',
   'settings.mcpServerTitle': 'سرور MCP',
-  'settings.mcpServerHint': 'Open Design را به‌عنوان سرور MCP برای عامل برنامه‌نویسی خود در دسترس قرار دهید.',
+  'settings.mcpServerHint': 'ArrowFlow Design را به‌عنوان سرور MCP برای عامل برنامه‌نویسی خود در دسترس قرار دهید.',
   'settings.externalMcpTitle': 'MCP خارجی',
   'settings.externalMcpHint': 'افزودن ابزارهای MCP از سرویس‌های خارجی (Higgsfield, GitHub, …).',
   'settings.mediaProviderApiKey': 'کلید API',
@@ -169,9 +169,9 @@ export const fa: Dict = {
   'settings.mediaProviderReloadSuccess': 'تنظیمات ارائه‌دهنده‌های رسانه از دیمن محلی دوباره بارگذاری شد.',
   'settings.mediaProviderLoadError': 'بارگذاری تنظیمات ارائه‌دهنده‌های رسانه از دیمن محلی ممکن نشد. فعلاً از تنظیمات ذخیره‌شده در مرورگر استفاده می‌شود.',
   'settings.privacy': 'Privacy',
-  'settings.privacyHint': 'What data is shared with the Open Design team',
-  'settings.privacyConsentKicker': 'Help us improve Open Design',
-  'settings.privacyConsentLead': 'Open Design can share usage data with our team to help us improve. This includes:',
+  'settings.privacyHint': 'What data is shared with the ArrowFlow Design team',
+  'settings.privacyConsentKicker': 'Help us improve ArrowFlow Design',
+  'settings.privacyConsentLead': 'ArrowFlow Design can share usage data with our team to help us improve. This includes:',
   'settings.privacyConsentFooter': 'You can change either of these any time in Settings → Privacy. We never upload the contents of your generated artifact files.',
   'settings.privacyConsentShare': 'Help improve',
   'settings.privacyConsentDecline': 'Not now',
@@ -653,7 +653,7 @@ export const fa: Dict = {
   'preview.closeTitle': 'بستن (Esc)',
   'preview.loading': 'در حال بارگذاری {label}…',
   'preview.errorTitle': 'بارگیری این نمونه ممکن نشد.',
-  'preview.errorBody': 'دریافت HTML نمونه با خطا مواجه شد. مطمئن شوید Open Design در حال اجراست و دوباره تلاش کنید.',
+  'preview.errorBody': 'دریافت HTML نمونه با خطا مواجه شد. مطمئن شوید ArrowFlow Design در حال اجراست و دوباره تلاش کنید.',
   'preview.retry': 'تلاش دوباره',
   'preview.unavailableTitle': 'برای این مهارت پیش‌نمایش همراهی وجود ندارد.',
   'preview.unavailableBody': 'این مهارت خروجی {kind} تولید می‌کند — برای ساخت یکی، پرامپت را در گفتگو اجرا کنید.',
@@ -1081,7 +1081,7 @@ export const fa: Dict = {
 
   'pet.title': 'حیوان خانگی',
   'pet.tabBuiltIn': 'پیش‌فرض',
-  'pet.tabBuiltInHint': 'همراهان منتخب همراه Open Design — یکی را انتخاب و فرزندخوانده کن.',
+  'pet.tabBuiltInHint': 'همراهان منتخب همراه ArrowFlow Design — یکی را انتخاب و فرزندخوانده کن.',
   'pet.builtInEmpty': 'حیوانات داخلی در حال حاضر در دسترس نیستند. وقتی دیمن دوباره فعال شد، تب جامعه را تازه کن.',
   'pet.tabCustom': 'سفارشی',
   'pet.tabCustomHint': 'نام، نشان، رنگ یا اسپرایت دلخواه خودت را تنظیم کن.',
@@ -1188,7 +1188,7 @@ export const fa: Dict = {
   'pet.communitySyncDone': '{wrote} حیوان جدید همگام شد (مجموع {total}).',
   'pet.communitySyncFailed': 'خطا در همگام‌سازی: {error}',
   'pet.codexBundled': 'همراه',
-  'pet.codexBundledTitle': 'همراه Open Design ارائه می‌شود — نیازی به دانلود نیست.',
+  'pet.codexBundledTitle': 'همراه ArrowFlow Design ارائه می‌شود — نیازی به دانلود نیست.',
 
   'settings.notifications': 'اعلان‌ها',
   'settings.notificationsHint': 'صدا و اعلان دسکتاپ هنگام تکمیل وظیفه',
@@ -1296,7 +1296,7 @@ export const fa: Dict = {
   'settings.memoryStarterFeedbackDesc': 'Dark mode, large body text, low information density',
   'settings.memoryStarterFeedbackBody': '- Theme: dark by default\n- Body text: ≥ 18px\n- Information density: prefer whitespace, fewer items per screen\n\nWhy: less eye strain during long sessions.\nWhen to apply: whenever you generate UI, web pages, or slides.',
   'settings.memoryStarterProjectName': 'Current project',
-  'settings.memoryStarterProjectDesc': 'Open Design v0.5 — chat-driven design editor',
+  'settings.memoryStarterProjectDesc': 'ArrowFlow Design v0.5 — chat-driven design editor',
   'settings.memoryStarterProjectBody': '- Goal: ship the chat-driven editor this quarter\n- Priorities: streaming render, local multimodal, offline-first\n- Stack: Next.js 16, Express daemon, SQLite\n\nWhen to apply: in any conversation about this project.',
   'settings.memorySaveHint': 'Not auto-saved — click Create / Save to apply.',
   'settings.memoryIndexSaveHint': 'Edits to the index are not auto-saved — click Save index to apply.',

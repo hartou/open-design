@@ -37,13 +37,13 @@ export const zhCN: Dict = {
   'common.daysShort': '{n}天',
   'common.untitled': '未命名',
 
-  'app.brand': 'Open Design',
+  'app.brand': 'ArrowFlow Design',
   'app.brandPill': '研究预览版',
   'app.brandSubtitle': '由 Nexu Labs 出品',
   'app.welcomeLoading': '正在加载工作区…',
 
   'settings.welcomeKicker': '欢迎',
-  'settings.welcomeTitle': '初始化 Open Design',
+  'settings.welcomeTitle': '初始化 ArrowFlow Design',
   'settings.welcomeSubtitle':
     '选择你希望使用的执行方式。后续可以随时从顶部「设置」按钮中修改。',
   'settings.kicker': '设置',
@@ -85,10 +85,10 @@ export const zhCN: Dict = {
   'settings.agentInstall.install': '安装',
   'settings.agentInstall.docs': '文档',
   'settings.agentInstall.pathHint':
-    '如果你通过 npm 或 Homebrew 安装了 CLI，但仍显示为未安装，请确认该工具的 bin 目录已加入 Open Design daemon 继承的 PATH（在 macOS 上，Terminal 与 GUI 应用的 PATH 可能不同）。请参阅 QUICKSTART.md（“Local agent CLI and PATH” 章节）。',
+    '如果你通过 npm 或 Homebrew 安装了 CLI，但仍显示为未安装，请确认该工具的 bin 目录已加入 ArrowFlow Design daemon 继承的 PATH（在 macOS 上，Terminal 与 GUI 应用的 PATH 可能不同）。请参阅 QUICKSTART.md（“Local agent CLI and PATH” 章节）。',
   'settings.agentInstall.stepOpenLinks': '在目标代理卡片上打开“安装”或“文档”链接。',
   'settings.agentInstall.stepAuth':
-    '返回 Open Design 之前，请先在对应 CLI 中完成认证（登录或添加 API 凭据）。',
+    '返回 ArrowFlow Design 之前，请先在对应 CLI 中完成认证（登录或添加 API 凭据）。',
   'settings.agentInstall.stepRescan': '在此区域点击“重新扫描”。',
   'settings.agentInstall.stepSelect': '当代理显示为已安装后，选择该代理卡片。',
   'settings.noAgentsDetected':
@@ -158,7 +158,7 @@ export const zhCN: Dict = {
   'settings.mediaProviders': '媒体生成提供商',
   'settings.mediaProvidersHint': '图片、视频、音频生成的 API key。存于本机并同步到本地守护进程。',
   'settings.mcpServerTitle': 'MCP 服务器',
-  'settings.mcpServerHint': '将 Open Design 作为 MCP 服务器暴露给你的编码代理。',
+  'settings.mcpServerHint': '将 ArrowFlow Design 作为 MCP 服务器暴露给你的编码代理。',
   'settings.externalMcpTitle': '外部 MCP',
   'settings.externalMcpHint': '接入外部服务的 MCP 工具（Higgsfield、GitHub 等）。',
   'settings.mediaProviderApiKey': 'API key',
@@ -174,9 +174,9 @@ export const zhCN: Dict = {
   'settings.mediaProviderReloadSuccess': '已从本地守护进程重新加载媒体提供方设置。',
   'settings.mediaProviderLoadError': '无法从本地守护进程加载媒体提供方设置。当前将使用浏览器中保存的设置。',
   'settings.privacy': '隐私',
-  'settings.privacyHint': '与 Open Design 团队共享哪些数据',
-  'settings.privacyConsentKicker': '帮助我们改进 Open Design',
-  'settings.privacyConsentLead': 'Open Design 可以将使用数据共享给我们的团队以协助改进。包括:',
+  'settings.privacyHint': '与 ArrowFlow Design 团队共享哪些数据',
+  'settings.privacyConsentKicker': '帮助我们改进 ArrowFlow Design',
+  'settings.privacyConsentLead': 'ArrowFlow Design 可以将使用数据共享给我们的团队以协助改进。包括:',
   'settings.privacyConsentFooter': '你可以随时在 设置 → 隐私 中修改任意一项。我们绝不上传你生成的产物文件内容。',
   'settings.privacyConsentShare': '帮助改进',
   'settings.privacyConsentDecline': '暂不',
@@ -204,9 +204,9 @@ export const zhCN: Dict = {
   // MCP server settings
   'settings.mcpTitle': 'MCP server',
   'settings.mcpHint':
-    '让其他仓库中的编码助手（Claude Code、Cursor、VS Code、Antigravity、Zed、Windsurf）读取你的 Open Design 项目。无需先导出 zip，即可将设计拉取到你的应用中。',
+    '让其他仓库中的编码助手（Claude Code、Cursor、VS Code、Antigravity、Zed、Windsurf）读取你的 ArrowFlow Design 项目。无需先导出 zip，即可将设计拉取到你的应用中。',
   'settings.mcpDaemonError':
-    '无法连接到本地守护进程以解析安装路径（{error}）。请确保 Open Design 正在运行，然后重新打开此面板。',
+    '无法连接到本地守护进程以解析安装路径（{error}）。请确保 ArrowFlow Design 正在运行，然后重新打开此面板。',
   'settings.mcpBuildDaemon': '请先构建守护进程。',
   'settings.mcpNodeMissing': 'Node 二进制文件缺失。',
   'settings.mcpBuildHint':
@@ -244,9 +244,9 @@ export const zhCN: Dict = {
   'settings.mcpCapabilityPull':
     '一次调用拉取设计包：入口文件及其引用的所有 CSS 变量、组件和字体。',
   'settings.mcpCapabilityDefault':
-    '默认使用你在 Open Design 中打开的项目和文件，因此你可以直接说"在我的应用中构建这个"，无需重复说明是哪个设计。',
+    '默认使用你在 ArrowFlow Design 中打开的项目和文件，因此你可以直接说"在我的应用中构建这个"，无需重复说明是哪个设计。',
   'settings.mcpRunningNote':
-    'Open Design 必须处于运行状态，MCP 工具调用才能成功。如果你在打开 Open Design 之前启动了编码助手，请重启助手以便它能连接到正在运行的守护进程。',
+    'ArrowFlow Design 必须处于运行状态，MCP 工具调用才能成功。如果你在打开 ArrowFlow Design 之前启动了编码助手，请重启助手以便它能连接到正在运行的守护进程。',
 
   'entry.tabDesigns': '我的设计',
   'entry.tabTemplates': '模板',
@@ -715,7 +715,7 @@ export const zhCN: Dict = {
   'preview.closeTitle': '关闭（Esc）',
   'preview.loading': '正在加载{label}…',
   'preview.errorTitle': '无法加载此示例。',
-  'preview.errorBody': '示例 HTML 加载失败。请确认 Open Design 正在运行后重试。',
+  'preview.errorBody': '示例 HTML 加载失败。请确认 ArrowFlow Design 正在运行后重试。',
   'preview.retry': '重试',
   'preview.unavailableTitle': '此技能暂未附带预览样例。',
   'preview.unavailableBody': '此技能用于生成 {kind} 产物 — 请在对话中运行此 Prompt 来生成。',
@@ -1215,7 +1215,7 @@ export const zhCN: Dict = {
 
   'pet.title': '宠物',
   'pet.tabBuiltIn': '内置',
-  'pet.tabBuiltInHint': 'Open Design 内置的精选宠物 — 一键领养。',
+  'pet.tabBuiltInHint': 'ArrowFlow Design 内置的精选宠物 — 一键领养。',
   'pet.builtInEmpty': '暂时无法加载内置宠物。等本地服务恢复后,刷新「社区」页签再试。',
   'pet.tabCustom': '自定义',
   'pet.tabCustomHint': '自己取名、选符号或上传精灵图。',
@@ -1322,7 +1322,7 @@ export const zhCN: Dict = {
   'pet.communitySyncDone': '已同步 {wrote} 个新宠物（共 {total} 个）。',
   'pet.communitySyncFailed': '同步失败：{error}',
   'pet.codexBundled': '内置',
-  'pet.codexBundledTitle': 'Open Design 内置宠物，无需下载。',
+  'pet.codexBundledTitle': 'ArrowFlow Design 内置宠物，无需下载。',
 
   'settings.notifications': '通知',
   'settings.notificationsHint': '任务完成时的声音和桌面通知',
@@ -1433,7 +1433,7 @@ export const zhCN: Dict = {
   'settings.memoryStarterFeedbackDesc': '深色主题、字号偏大、信息密度低',
   'settings.memoryStarterFeedbackBody': '- 主题：默认深色\n- 正文字号：≥ 18px\n- 信息密度：留白多一些，一屏不要塞太多东西\n\n为什么：长时间使用眼睛不容易累。\n何时适用：让你画 UI、网页、PPT 时都按这个走。',
   'settings.memoryStarterProjectName': '当前项目',
-  'settings.memoryStarterProjectDesc': 'Open Design v0.5 — 聊天驱动的设计编辑器',
+  'settings.memoryStarterProjectDesc': 'ArrowFlow Design v0.5 — 聊天驱动的设计编辑器',
   'settings.memoryStarterProjectBody': '- 目标：本季度交付聊天驱动的编辑体验\n- 优先级：流式渲染、本地多模态、离线优先\n- 技术栈：Next.js 16、Express daemon、SQLite\n\n何时适用：与本项目相关的所有对话。',
   'settings.memorySaveHint': '不会自动保存 — 点击「创建」/「保存」才生效。',
   'settings.memoryIndexSaveHint': '索引不会自动保存 — 改完后点击「保存索引」才生效。',

@@ -37,13 +37,13 @@ export const en: Dict = {
   'common.daysShort': '{n}d',
   'common.untitled': 'Untitled',
 
-  'app.brand': 'Open Design',
+  'app.brand': 'ArrowFlow Design',
   'app.brandPill': 'Research Preview',
   'app.brandSubtitle': 'by Nexu Labs',
   'app.welcomeLoading': 'Loading workspace…',
 
   'settings.welcomeKicker': 'Welcome',
-  'settings.welcomeTitle': 'Set up Open Design',
+  'settings.welcomeTitle': 'Set up ArrowFlow Design',
   'settings.welcomeSubtitle':
     "Pick how you'd like to run generations. You can change this any time from the Settings button in the top bar.",
   'settings.kicker': 'Settings',
@@ -86,10 +86,10 @@ export const en: Dict = {
   'settings.agentInstall.install': 'Install',
   'settings.agentInstall.docs': 'Docs',
   'settings.agentInstall.pathHint':
-    'If you installed a CLI with npm or Homebrew and it still shows as not installed, ensure the tool\'s bin directory is on the PATH the Open Design daemon inherits (Terminal vs GUI apps can differ on macOS). See QUICKSTART.md (section "Local agent CLI and PATH").',
+    'If you installed a CLI with npm or Homebrew and it still shows as not installed, ensure the tool\'s bin directory is on the PATH the ArrowFlow Design daemon inherits (Terminal vs GUI apps can differ on macOS). See QUICKSTART.md (section "Local agent CLI and PATH").',
   'settings.agentInstall.stepOpenLinks': 'Open Install or Docs for your preferred agent.',
   'settings.agentInstall.stepAuth':
-    'Authenticate with the vendor CLI (sign in or add API credentials) before returning to Open Design.',
+    'Authenticate with the vendor CLI (sign in or add API credentials) before returning to ArrowFlow Design.',
   'settings.agentInstall.stepRescan': 'Click Rescan in this section.',
   'settings.agentInstall.stepSelect': 'Select the agent card once it appears as installed.',
   'settings.noAgentsDetected':
@@ -160,7 +160,7 @@ export const en: Dict = {
   'settings.mediaProvidersHint':
     'API keys for image, video and audio generation. Stored locally and synced to the local daemon.',
   'settings.mcpServerTitle': 'MCP server',
-  'settings.mcpServerHint': 'Expose Open Design as an MCP server for your coding agent.',
+  'settings.mcpServerHint': 'Expose ArrowFlow Design as an MCP server for your coding agent.',
   'settings.externalMcpTitle': 'External MCP',
   'settings.externalMcpHint': 'Add MCP tools from external services (Higgsfield, GitHub, …).',
   'settings.mediaProviderApiKey': 'API key',
@@ -176,9 +176,9 @@ export const en: Dict = {
   'settings.mediaProviderReloadSuccess': 'Reloaded media provider settings from the local daemon.',
   'settings.mediaProviderLoadError': 'Could not load media provider settings from the local daemon. Using browser-saved settings for now.',
   'settings.privacy': 'Privacy',
-  'settings.privacyHint': 'What data is shared with the Open Design team',
-  'settings.privacyConsentKicker': 'Help us improve Open Design',
-  'settings.privacyConsentLead': 'Open Design can share usage data with our team to help us improve. This includes:',
+  'settings.privacyHint': 'What data is shared with the ArrowFlow Design team',
+  'settings.privacyConsentKicker': 'Help us improve ArrowFlow Design',
+  'settings.privacyConsentLead': 'ArrowFlow Design can share usage data with our team to help us improve. This includes:',
   'settings.privacyConsentFooter': 'You can change either of these any time in Settings → Privacy. We never upload the contents of your generated artifact files.',
   'settings.privacyConsentShare': 'Help improve',
   'settings.privacyConsentDecline': 'Not now',
@@ -206,9 +206,9 @@ export const en: Dict = {
   // MCP server settings
   'settings.mcpTitle': 'MCP server',
   'settings.mcpHint':
-    'Lets a coding agent in another repo (Claude Code, Cursor, VS Code, Antigravity, Zed, Windsurf) read your Open Design projects. Use it to pull a design into your app without exporting a zip first.',
+    'Lets a coding agent in another repo (Claude Code, Cursor, VS Code, Antigravity, Zed, Windsurf) read your ArrowFlow Design projects. Use it to pull a design into your app without exporting a zip first.',
   'settings.mcpDaemonError':
-    "Couldn't reach the local daemon to resolve install paths ({error}). Make sure Open Design is running, then reopen this panel.",
+    "Couldn't reach the local daemon to resolve install paths ({error}). Make sure ArrowFlow Design is running, then reopen this panel.",
   'settings.mcpBuildDaemon': 'Build the daemon first.',
   'settings.mcpNodeMissing': 'Node binary is missing.',
   'settings.mcpBuildHint':
@@ -246,9 +246,9 @@ export const en: Dict = {
   'settings.mcpCapabilityPull':
     'Pull a design bundle in one call: the entry file plus every CSS variable, component, and font it references.',
   'settings.mcpCapabilityDefault':
-    'Default to the project and file you have open in Open Design, so you can say "build this in my app" without re-stating which design.',
+    'Default to the project and file you have open in ArrowFlow Design, so you can say "build this in my app" without re-stating which design.',
   'settings.mcpRunningNote':
-    'Open Design must be running for MCP tool calls to succeed. If you started your coding agent before opening Open Design, restart the agent so it can reach the live daemon.',
+    'ArrowFlow Design must be running for MCP tool calls to succeed. If you started your coding agent before opening ArrowFlow Design, restart the agent so it can reach the live daemon.',
 
   'entry.tabDesigns': 'Designs',
   'entry.tabTemplates': 'Templates',
@@ -725,7 +725,7 @@ export const en: Dict = {
   'preview.closeTitle': 'Close (Esc)',
   'preview.loading': 'Loading {label}…',
   'preview.errorTitle': 'Couldn\'t load this example.',
-  'preview.errorBody': 'The example HTML failed to fetch. Make sure Open Design is running and try again.',
+  'preview.errorBody': 'The example HTML failed to fetch. Make sure ArrowFlow Design is running and try again.',
   'preview.retry': 'Retry',
   'preview.unavailableTitle': 'No shipped preview for this skill.',
   'preview.unavailableBody': 'This skill produces {kind} output — run the prompt in chat to generate one.',
@@ -1254,7 +1254,7 @@ export const en: Dict = {
   'pet.navTitle': 'Pets',
   'pet.navHint': 'Adopt or customize',
   'pet.tabBuiltIn': 'Built-in',
-  'pet.tabBuiltInHint': 'Curated companions bundled with Open Design — pick one and adopt.',
+  'pet.tabBuiltInHint': 'Curated companions bundled with ArrowFlow Design — pick one and adopt.',
   'pet.builtInEmpty': 'Built-in pets are unavailable right now. Try refreshing the Community tab once the daemon is online.',
   'pet.tabCustom': 'Custom',
   'pet.tabCustomHint': 'Make your own with a name, glyph, color or sprite.',
@@ -1358,7 +1358,7 @@ export const en: Dict = {
   'pet.communitySyncDone': 'Synced {wrote} new pets ({total} total).',
   'pet.communitySyncFailed': 'Sync failed: {error}',
   'pet.codexBundled': 'Bundled',
-  'pet.codexBundledTitle': 'Ships with Open Design — no download needed.',
+  'pet.codexBundledTitle': 'Ships with ArrowFlow Design — no download needed.',
 
   'settings.notifications': 'Notifications',
   'settings.notificationsHint': 'Sound and desktop notification on task completion',
@@ -1469,7 +1469,7 @@ export const en: Dict = {
   'settings.memoryStarterFeedbackDesc': 'Dark mode, large body text, low information density',
   'settings.memoryStarterFeedbackBody': '- Theme: dark by default\n- Body text: ≥ 18px\n- Information density: prefer whitespace, fewer items per screen\n\nWhy: less eye strain during long sessions.\nWhen to apply: whenever you generate UI, web pages, or slides.',
   'settings.memoryStarterProjectName': 'Current project',
-  'settings.memoryStarterProjectDesc': 'Open Design v0.5 — chat-driven design editor',
+  'settings.memoryStarterProjectDesc': 'ArrowFlow Design v0.5 — chat-driven design editor',
   'settings.memoryStarterProjectBody': '- Goal: ship the chat-driven editor this quarter\n- Priorities: streaming render, local multimodal, offline-first\n- Stack: Next.js 16, Express daemon, SQLite\n\nWhen to apply: in any conversation about this project.',
   'settings.memorySaveHint': 'Not auto-saved — click Create / Save to apply.',
   'settings.memoryIndexSaveHint': 'Edits to the index are not auto-saved — click Save index to apply.',

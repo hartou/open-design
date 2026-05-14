@@ -39,13 +39,13 @@ export const ja: Dict = {
   'common.daysShort': '{n}日',
   'common.untitled': '無題',
 
-  'app.brand': 'Open Design',
+  'app.brand': 'ArrowFlow Design',
   'app.brandPill': 'リサーチプレビュー',
   'app.brandSubtitle': 'by Nexu Labs',
   'app.welcomeLoading': 'ワークスペースを読み込み中…',
 
   'settings.welcomeKicker': 'ようこそ',
-  'settings.welcomeTitle': 'Open Design を設定',
+  'settings.welcomeTitle': 'ArrowFlow Design を設定',
   'settings.welcomeSubtitle':
     '生成の実行方法を選んでください。この設定はいつでもトップバーの設定ボタンから変更できます。',
   'settings.kicker': '設定',
@@ -88,10 +88,10 @@ export const ja: Dict = {
   'settings.agentInstall.install': 'インストール',
   'settings.agentInstall.docs': 'ドキュメント',
   'settings.agentInstall.pathHint':
-    'npm または Homebrew で CLI をインストールしたのに未インストールのまま表示される場合は、Open Design daemon が引き継ぐ PATH にツールの bin ディレクトリが含まれていることを確認してください（macOS では Terminal と GUI アプリで PATH が異なる場合があります）。QUICKSTART.md（"Local agent CLI and PATH" セクション）を参照してください。',
+    'npm または Homebrew で CLI をインストールしたのに未インストールのまま表示される場合は、ArrowFlow Design daemon が引き継ぐ PATH にツールの bin ディレクトリが含まれていることを確認してください（macOS では Terminal と GUI アプリで PATH が異なる場合があります）。QUICKSTART.md（"Local agent CLI and PATH" セクション）を参照してください。',
   'settings.agentInstall.stepOpenLinks': '利用したいエージェントの「インストール」または「ドキュメント」を開きます。',
   'settings.agentInstall.stepAuth':
-    'Open Design に戻る前に、ベンダー CLI で認証（サインインまたは API 資格情報の追加）を行います。',
+    'ArrowFlow Design に戻る前に、ベンダー CLI で認証（サインインまたは API 資格情報の追加）を行います。',
   'settings.agentInstall.stepRescan': 'このセクションで「再スキャン」をクリックします。',
   'settings.agentInstall.stepSelect': 'インストール済みとして表示されたらエージェントカードを選択します。',
   'settings.noAgentsDetected':
@@ -153,7 +153,7 @@ export const ja: Dict = {
   'settings.mediaProvidersHint':
     '画像・動画・音声生成のための API キー。ローカルに保存され、ローカルデーモンに同期されます。',
   'settings.mcpServerTitle': 'MCP サーバー',
-  'settings.mcpServerHint': 'Open Design を MCP サーバーとしてコーディングエージェントに公開します。',
+  'settings.mcpServerHint': 'ArrowFlow Design を MCP サーバーとしてコーディングエージェントに公開します。',
   'settings.externalMcpTitle': '外部 MCP',
   'settings.externalMcpHint': '外部サービス（Higgsfield、GitHub など）の MCP ツールを追加します。',
   'settings.mediaProviderApiKey': 'APIキー',
@@ -169,9 +169,9 @@ export const ja: Dict = {
   'settings.mediaProviderReloadSuccess': 'ローカルデーモンからメディアプロバイダー設定を再読み込みしました。',
   'settings.mediaProviderLoadError': 'ローカルデーモンからメディアプロバイダー設定を読み込めませんでした。今のところブラウザーに保存された設定を使用します。',
   'settings.privacy': 'Privacy',
-  'settings.privacyHint': 'What data is shared with the Open Design team',
-  'settings.privacyConsentKicker': 'Help us improve Open Design',
-  'settings.privacyConsentLead': 'Open Design can share usage data with our team to help us improve. This includes:',
+  'settings.privacyHint': 'What data is shared with the ArrowFlow Design team',
+  'settings.privacyConsentKicker': 'Help us improve ArrowFlow Design',
+  'settings.privacyConsentLead': 'ArrowFlow Design can share usage data with our team to help us improve. This includes:',
   'settings.privacyConsentFooter': 'You can change either of these any time in Settings → Privacy. We never upload the contents of your generated artifact files.',
   'settings.privacyConsentShare': 'Help improve',
   'settings.privacyConsentDecline': 'Not now',
@@ -518,7 +518,7 @@ export const ja: Dict = {
   'preview.closeTitle': '閉じる (Esc)',
   'preview.loading': '{label} を読み込み中…',
   'preview.errorTitle': 'この例を読み込めませんでした。',
-  'preview.errorBody': '例の HTML を取得できませんでした。Open Design が起動していることを確認して再試行してください。',
+  'preview.errorBody': '例の HTML を取得できませんでした。ArrowFlow Design が起動していることを確認して再試行してください。',
   'preview.retry': '再試行',
   'preview.unavailableTitle': 'このスキルにはプレビューが同梱されていません。',
   'preview.unavailableBody': 'このスキルは {kind} 出力を生成します — チャットでプロンプトを実行して生成してください。',
@@ -966,7 +966,7 @@ export const ja: Dict = {
 
   'pet.title': 'ペット',
   'pet.tabBuiltIn': '組み込み',
-  'pet.tabBuiltInHint': 'Open Design に同梱された厳選コンパニオン — 選んで迎え入れよう。',
+  'pet.tabBuiltInHint': 'ArrowFlow Design に同梱された厳選コンパニオン — 選んで迎え入れよう。',
   'pet.builtInEmpty': '組み込みペットを今は読み込めません。デーモンが復帰したらコミュニティタブを更新してください。',
   'pet.tabCustom': 'カスタム',
   'pet.tabCustomHint': '名前・絵文字・色・スプライトを自分で設定。',
@@ -1073,7 +1073,7 @@ export const ja: Dict = {
   'pet.communitySyncDone': '{wrote} 体の新しいペットを同期しました（合計 {total} 体）。',
   'pet.communitySyncFailed': '同期に失敗しました: {error}',
   'pet.codexBundled': '同梱',
-  'pet.codexBundledTitle': 'Open Design に同梱 — ダウンロード不要。',
+  'pet.codexBundledTitle': 'ArrowFlow Design に同梱 — ダウンロード不要。',
 
   'settings.notifications': '通知',
   'settings.notificationsHint': 'タスク完了時の効果音とデスクトップ通知',
@@ -1181,7 +1181,7 @@ export const ja: Dict = {
   'settings.memoryStarterFeedbackDesc': 'Dark mode, large body text, low information density',
   'settings.memoryStarterFeedbackBody': '- Theme: dark by default\n- Body text: ≥ 18px\n- Information density: prefer whitespace, fewer items per screen\n\nWhy: less eye strain during long sessions.\nWhen to apply: whenever you generate UI, web pages, or slides.',
   'settings.memoryStarterProjectName': 'Current project',
-  'settings.memoryStarterProjectDesc': 'Open Design v0.5 — chat-driven design editor',
+  'settings.memoryStarterProjectDesc': 'ArrowFlow Design v0.5 — chat-driven design editor',
   'settings.memoryStarterProjectBody': '- Goal: ship the chat-driven editor this quarter\n- Priorities: streaming render, local multimodal, offline-first\n- Stack: Next.js 16, Express daemon, SQLite\n\nWhen to apply: in any conversation about this project.',
   'settings.memorySaveHint': 'Not auto-saved — click Create / Save to apply.',
   'settings.memoryIndexSaveHint': 'Edits to the index are not auto-saved — click Save index to apply.',
