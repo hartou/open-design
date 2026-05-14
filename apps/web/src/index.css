@@ -897,7 +897,7 @@ code {
   padding: 4px 6px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background: var(--bg-panel);
+  background-color: var(--bg-panel);
   color: var(--text);
   cursor: pointer;
 }

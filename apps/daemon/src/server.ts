@@ -81,6 +81,8 @@ import { createRunRegistry } from './critique/run-registry.js';
 import { handleCritiqueInterrupt } from './critique/interrupt-handler.js';
 import { handleCritiqueArtifact } from './critique/artifact-handler.js';
 import { getCritiqueMetrics, register } from './metrics/index.js';
+import { readConformanceHistory } from './critique/conformance-history.js';
+import { evaluateRollout } from './critique/ratchet.js';
 import {
   isCritiqueEnabled,
   parseEnvEnabled,
@@ -2436,6 +2438,47 @@ export async function startServer({
       res.send(await getCritiqueMetrics());
     });
   }
+
+  // Phase 16 ratchet endpoint. Returns the rolling conformance window
+  // and the ratchet's current recommendation. Operator-driven by
+  // design: the recommendation does not flip OD_CRITIQUE_ROLLOUT_PHASE
+  // automatically, it surfaces so a deploy-pipeline follow-up can
+  // consume it. Tunables come from query string; defaults are the
+  // spec values (14 days, 0.90 shipped, 0.95 clean-parse).
+  // Codex + lefarcen P1 on PR #1499: clamp query inputs before the
+  // evaluator sees them so a request like `?windowDays=0` falls back to
+  // the spec default rather than producing a zero-evidence promotion.
+  // The evaluator also defends at its own entry; both are intentional
+  // (belt + suspenders) so a future caller that bypasses this route
+  // cannot reach an unguarded code path either.
+  const parsePositiveInt = (raw: unknown, fallback: number): number => {
+    if (typeof raw !== 'string' || raw.length === 0) return fallback;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+  };
+  const parseRate = (raw: unknown, fallback: number): number => {
+    if (typeof raw !== 'string' || raw.length === 0) return fallback;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 && n <= 1 ? n : fallback;
+  };
+  app.get('/api/critique/conformance', async (req, res) => {
+    try {
+      const windowDays = parsePositiveInt(req.query.windowDays, 14);
+      const shippedThreshold = parseRate(req.query.shippedThreshold, 0.90);
+      const cleanParseThreshold = parseRate(req.query.cleanParseThreshold, 0.95);
+      const history = await readConformanceHistory(RUNTIME_DATA_DIR, windowDays);
+      const decision = evaluateRollout({
+        current: parseRolloutPhase(process.env.OD_CRITIQUE_ROLLOUT_PHASE),
+        history,
+        windowDays,
+        shippedThreshold,
+        cleanParseThreshold,
+      });
+      res.json({ window: { days: windowDays, history }, decision });
+    } catch (err) {
+      sendApiError(res, 500, 'INTERNAL_ERROR', err instanceof Error ? err.message : String(err));
+    }
+  });
 
   registerConnectorRoutes(app, {
     sendApiError,

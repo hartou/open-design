@@ -46,6 +46,7 @@ import {
 import type { ProjectFilePreview } from '../providers/registry';
 import {
   exportAsHtml,
+  exportAsImage,
   exportAsJsx,
   exportAsMd,
   exportAsPdf,
@@ -54,6 +55,7 @@ import {
   exportReactComponentAsHtml,
   exportReactComponentAsZip,
   openSandboxedPreviewInNewTab,
+  requestPreviewSnapshot,
 } from '../runtime/exports';
 import { buildReactComponentSrcdoc } from '../runtime/react-component';
 import { buildSrcdoc } from '../runtime/srcdoc';
@@ -5485,6 +5487,33 @@ function HtmlViewer({
                     <span className="share-menu-icon"><Icon name="file" size={14} /></span>
                     <span>{t('fileViewer.exportMd')}</span>
                   </button>
+                  {!useUrlLoadPreview ? (
+                    <button
+                      type="button"
+                      className="share-menu-item"
+                      role="menuitem"
+                      onClick={async () => {
+                        setShareMenuOpen(false);
+                        const iframe = iframeRef.current;
+                        if (!iframe) return;
+                        const snap = await requestPreviewSnapshot(iframe);
+                        try {
+                          if (snap) {
+                            exportAsImage(snap.dataUrl, exportTitle);
+                          } else {
+                            console.warn('[exportAsImage] snapshot capture returned null');
+                            alert(t('fileViewer.exportImageFailed'));
+                          }
+                        } catch (err) {
+                          console.warn('[exportAsImage] failed to convert snapshot:', err);
+                          alert(t('fileViewer.exportImageFailed'));
+                        }
+                      }}
+                    >
+                      <span className="share-menu-icon"><Icon name="image" size={14} /></span>
+                      <span>{t('fileViewer.exportImage')}</span>
+                    </button>
+                  ) : null}
                   <div className="share-menu-divider" />
                   <button
                     type="button"
