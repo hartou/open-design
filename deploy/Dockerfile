@@ -24,22 +24,35 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY scripts/postinstall.mjs ./scripts/postinstall.mjs
 COPY packages ./packages
-COPY tools ./tools
 COPY apps/daemon/package.json ./apps/daemon/package.json
 COPY apps/web/package.json ./apps/web/package.json
+COPY apps/desktop/package.json ./apps/desktop/package.json
+COPY apps/landing-page/package.json ./apps/landing-page/package.json
+COPY apps/packaged/package.json ./apps/packaged/package.json
+COPY apps/telemetry-worker/package.json ./apps/telemetry-worker/package.json
 COPY e2e/package.json ./e2e/package.json
+COPY tools/dev/package.json ./tools/dev/package.json
+COPY tools/pack/package.json ./tools/pack/package.json
+COPY tools/pr/package.json ./tools/pr/package.json
 RUN corepack enable && \
     corepack prepare pnpm@10.33.2 --activate && \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --ignore-scripts && \
+    pnpm rebuild better-sqlite3 && \
+    pnpm --filter @open-design/contracts build && \
+    pnpm --filter @open-design/sidecar-proto build && \
+    pnpm --filter @open-design/sidecar build && \
+    pnpm --filter @open-design/platform build
 
-COPY apps ./apps
+COPY apps/daemon ./apps/daemon
+COPY apps/web ./apps/web
 # Clerk publishable key must be available at Next.js build time for
 # NEXT_PUBLIC_* inlining into the static export.
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 RUN pnpm --filter @open-design/daemon build && \
     pnpm --filter @open-design/web build && \
-    pnpm --filter @open-design/daemon deploy --legacy --prod /app/deploy/daemon && \
+    pnpm --filter @open-design/daemon deploy --legacy --prod --ignore-scripts /app/deploy/daemon && \
+    cd /app/deploy/daemon && npm rebuild better-sqlite3 && cd /app && \
     pnpm store prune && \
     rm -rf \
       /root/.cache \
@@ -84,7 +97,6 @@ COPY --chown=open-design:open-design design-systems ./design-systems
 COPY --chown=open-design:open-design craft ./craft
 COPY --chown=open-design:open-design prompt-templates ./prompt-templates
 COPY --chown=open-design:open-design assets/frames ./assets/frames
-COPY --chown=open-design:open-design assets/community-pets ./assets/community-pets
 
 RUN mkdir -p /app/.od && \
     chown -R open-design:open-design /app

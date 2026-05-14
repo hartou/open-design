@@ -2319,7 +2319,14 @@ export async function startServer({
   const sharedDb = openDatabase(PROJECT_ROOT, { dataDir: RUNTIME_DATA_DIR });
   const db = isSaasMode()
     ? new Proxy(sharedDb, {
-        get(target, prop) {
+        get(target, prop, receiver) {
+          // Symbol properties on better-sqlite3 Database objects are
+          // non-configurable. The Proxy invariant requires us to return
+          // the target's actual value for those — otherwise V8 throws
+          // "property 'Symbol()' is a read-only and non-configurable…".
+          if (typeof prop === 'symbol') {
+            return Reflect.get(target, prop, receiver);
+          }
           const requestDb = requestDbStore.getStore();
           return Reflect.get(requestDb || target, prop);
         },

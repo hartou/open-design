@@ -3,11 +3,11 @@
  * credentials so users only pick a model, never handle API keys.
  *
  * Two Foundry resources are supported, each with its own endpoint + key:
- *   - Primary (OD_FOUNDRY_ENDPOINT / OD_FOUNDRY_KEY)
- *   - Secondary (OD_FOUNDRY_ENDPOINT_2 / OD_FOUNDRY_KEY_2)
+ *   - Primary (OD_FOUNDRY_ENDPOINT / OD_FOUNDRY_KEY / OD_FOUNDRY_DEPLOYMENTS)
+ *   - Secondary (OD_FOUNDRY_ENDPOINT_2 / OD_FOUNDRY_KEY_2 / OD_FOUNDRY_DEPLOYMENTS_2)
  *
- * Deployment-to-resource mapping is resolved at startup by querying
- * both endpoints.
+ * Deployments are configured via comma-separated env vars because the
+ * Azure AI Services data-plane key cannot list deployments.
  */
 
 import type { Express, Request, Response } from 'express';
@@ -17,11 +17,12 @@ import type { Express, Request, Response } from 'express';
 interface FoundryResource {
   endpoint: string;  // e.g. https://arrowflow-ai.cognitiveservices.azure.com/
   apiKey: string;
+  deploymentNames: string[];
 }
 
 interface DeploymentInfo {
   id: string;       // deployment name e.g. "gpt-5.4-nano"
-  model: string;    // underlying model name
+  model: string;    // same as id for Azure AI Services
   resource: FoundryResource;
 }
 
@@ -31,11 +32,19 @@ function getResources(): FoundryResource[] {
   const resources: FoundryResource[] = [];
   const e1 = process.env.OD_FOUNDRY_ENDPOINT?.trim();
   const k1 = process.env.OD_FOUNDRY_KEY?.trim();
-  if (e1 && k1) resources.push({ endpoint: e1, apiKey: k1 });
+  const d1 = process.env.OD_FOUNDRY_DEPLOYMENTS?.trim();
+  if (e1 && k1 && d1) resources.push({
+    endpoint: e1, apiKey: k1,
+    deploymentNames: d1.split(',').map((s) => s.trim()).filter(Boolean),
+  });
 
   const e2 = process.env.OD_FOUNDRY_ENDPOINT_2?.trim();
   const k2 = process.env.OD_FOUNDRY_KEY_2?.trim();
-  if (e2 && k2) resources.push({ endpoint: e2, apiKey: k2 });
+  const d2 = process.env.OD_FOUNDRY_DEPLOYMENTS_2?.trim();
+  if (e2 && k2 && d2) resources.push({
+    endpoint: e2, apiKey: k2,
+    deploymentNames: d2.split(',').map((s) => s.trim()).filter(Boolean),
+  });
 
   return resources;
 }
@@ -44,27 +53,7 @@ export function isFoundryConfigured(): boolean {
   return getResources().length > 0;
 }
 
-// ── deployment discovery ─────────────────────────────────────────────
-
-async function discoverDeployments(resource: FoundryResource): Promise<DeploymentInfo[]> {
-  const url = `${resource.endpoint.replace(/\/+$/, '')}/openai/deployments?api-version=2024-10-21`;
-  try {
-    const resp = await fetch(url, {
-      headers: { 'api-key': resource.apiKey },
-    });
-    if (!resp.ok) {
-      console.warn(`[foundry] deployment discovery failed for ${resource.endpoint}: ${resp.status}`);
-      return [];
-    }
-    const data = await resp.json() as { data?: Array<{ id: string; model: string }> };
-    return (data.data ?? [])
-      .filter((d) => d.id && d.model)
-      .map((d) => ({ id: d.id, model: d.model, resource }));
-  } catch (err: any) {
-    console.warn(`[foundry] deployment discovery error for ${resource.endpoint}: ${err.message}`);
-    return [];
-  }
-}
+// ── init ─────────────────────────────────────────────────────────────
 
 export async function initFoundry(): Promise<void> {
   const resources = getResources();
@@ -72,9 +61,12 @@ export async function initFoundry(): Promise<void> {
     console.log('[foundry] no Foundry resources configured');
     return;
   }
-  const results = await Promise.all(resources.map(discoverDeployments));
-  deployments = results.flat();
-  console.log(`[foundry] discovered ${deployments.length} deployment(s): ${deployments.map((d) => d.id).join(', ')}`);
+  for (const r of resources) {
+    for (const name of r.deploymentNames) {
+      deployments.push({ id: name, model: name, resource: r });
+    }
+  }
+  console.log(`[foundry] configured ${deployments.length} deployment(s): ${deployments.map((d) => d.id).join(', ')}`);
 }
 
 export function getFoundryDeployments(): Array<{ id: string; model: string }> {
@@ -131,7 +123,7 @@ export function registerFoundryRoutes(app: Express): void {
     }
 
     const baseUrl = deployment.resource.endpoint.replace(/\/+$/, '');
-    const url = `${baseUrl}/openai/deployments/${encodeURIComponent(deployment.id)}/chat/completions?api-version=2024-10-21`;
+    const url = `${baseUrl}/openai/deployments/${encodeURIComponent(deployment.id)}/chat/completions?api-version=2024-12-01-preview`;
 
     console.log(`[foundry] ${req.method} ${deployment.id} on ${baseUrl}`);
 
@@ -148,7 +140,7 @@ export function registerFoundryRoutes(app: Express): void {
       stream: true,
     };
     if (typeof maxTokens === 'number' && maxTokens > 0) {
-      payload.max_tokens = maxTokens;
+      payload.max_completion_tokens = maxTokens;
     }
 
     const sse = createSseResponse(res);

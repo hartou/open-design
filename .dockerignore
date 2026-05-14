@@ -6,6 +6,7 @@
 .task
 .od
 .ocd
+.tmp
 node_modules
 dist
 coverage
@@ -18,3 +19,37 @@ deploy/**/*.tgz
 deploy/**/*.zip
 docs
 story
+specs
+nix
+flake.nix
+flake.lock
+
+# Large content not needed in the SaaS image
+design-templates
+assets/community-pets
+templates
+
+# Apps not needed for daemon+web
+apps/desktop
+apps/packaged
+apps/landing-page
+apps/telemetry-worker
+
+# Dev tools not needed at runtime
+e2e
+tools
+
+# Docs and meta
+*.md
+!README.md
+TRANSLATIONS.md
+LICENSE
+NOTICE
+CHANGELOG.md
+CONTRIBUTING*.md
+MAINTAINERS*.md
+QUICKSTART*.md
+README.*.md
+AGENTS.md
+CLAUDE.md
+vercel.json

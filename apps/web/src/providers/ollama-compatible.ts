@@ -50,28 +50,30 @@ export async function streamMessageFoundry(
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
 
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
+      // Split on double-newline SSE boundaries
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? '';
 
-      for (const line of lines) {
-        const frame = parseSseFrame(line);
-        if (!frame) continue;
+      for (const part of parts) {
+        if (!part.trim()) continue;
+        const frame = parseSseFrame(part);
+        if (!frame || frame.kind !== 'event') continue;
         if (frame.event === 'delta') {
           const delta = (frame.data as { delta?: string }).delta ?? '';
           acc += delta;
-          handlers.onToken(acc, delta);
+          handlers.onDelta(delta);
         } else if (frame.event === 'error') {
           const msg = (frame.data as { message?: string }).message ?? 'Unknown error';
           handlers.onError(new Error(msg));
           return;
         } else if (frame.event === 'end') {
-          handlers.onComplete(acc);
+          handlers.onDone(acc);
           return;
         }
       }
     }
 
-    handlers.onComplete(acc);
+    handlers.onDone(acc);
   } catch (err: any) {
     if (err.name === 'AbortError') return;
     handlers.onError(err);
